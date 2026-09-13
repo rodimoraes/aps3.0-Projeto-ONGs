@@ -26,7 +26,7 @@ function Header({ onMenuClick, onSearch }) {
           </button>
 
           {/* Logo / Nome do Projeto (EncontreONG) */}
-          <Link to="/home" className="flex items-center gap-2 group">
+          <Link to="/" className="flex items-center gap-2 group">
             <img
               src="/EncontreONG.png"
               alt="Logo Encontre ONG"
