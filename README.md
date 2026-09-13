@@ -3,9 +3,9 @@
 Instruções para preparar o servidor FrontEnd:
 
 👨🏻‍💻
-#Instalar vite
+#Instalar bibliotecas do Node
 
-$ npm install vite 
+$ npm install
 
 Iniciar o servidor FrontEnd:
 
