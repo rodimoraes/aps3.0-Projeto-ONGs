@@ -8,11 +8,11 @@ function CadastrarOng() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4">
+    <div className="min-h-screen bg-slate-50  px-4">
       <div className="max-w-2xl mx-auto">
         {/* Botão para Voltar para a Home */}
         <Link
-          to="/home"
+          to="/"
           className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-700 font-medium mb-6 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
