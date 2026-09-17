@@ -26,7 +26,6 @@ busca.execute('Select * from usuario;')
 for linha in busca.fetchall():
     print(linha)
 
-id_usuario = input('Digite o seu ID:')
 nome = input('Digite seu nome:') 
 cpf = input('Digite seu cpf:')
 endereco = input('Digite seu endereço:') 
@@ -39,10 +38,12 @@ celular = input('Celular:')
 representante_ong = input('É representante de ONG (s/n):')
 
 
-sql = "INSERT INTO produto (nome, estoque) VALUES (%s, %s)"
-cursor.execute(sql, ("Mousepad XL", 25))
+#print(f'{id_usuario} - {nome} - {cpf} - {endereco} - {estado_civil} - {rg} - {email} - {data_nascimento} - {voluntario} - {celular} - {representante_ong}')
+
+sql = "INSERT INTO usuario (nome, cpf,endereco,estado_civil,rg,email,data_nascimento,voluntario,celular,representante_ong) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+busca.execute(sql, (nome,cpf,endereco,estado_civil,rg,email,data_nascimento,voluntario,celular,representante_ong))
 conexao.commit() # sem isso, a inserção não é persistida (Aula 1)
-print("Novo id:", cursor.lastrowid)
+print("Novo id:", busca.lastrowid)
 
 
 conexao.close()
