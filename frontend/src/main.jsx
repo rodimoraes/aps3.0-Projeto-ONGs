@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom"; // Importa os c
 import "./index.css";
 import Home from "./pages/home";
 import CadastrarOng from "./pages/cadastrarOng";
+import CadastrarUsuario from "./pages/cadastrarUsuario";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -14,6 +15,7 @@ createRoot(document.getElementById("root")).render(
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/cadastrar-ong" element={<CadastrarOng />} />
+        <Route path="/cadastrar-usuario" element={<CadastrarUsuario />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

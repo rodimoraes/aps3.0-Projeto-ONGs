@@ -77,6 +77,13 @@ function Header({ onMenuClick, onSearch }) {
           >
             Cadastrar ONG
           </Link>
+
+          <Link
+            to="/cadastrar-Usuario"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs hover:shadow-blue-200 transition-all active:scale-95 cursor-pointer"
+          >
+            Cadastrar Usuario
+          </Link>
         </div>
       </div>
     </header>
