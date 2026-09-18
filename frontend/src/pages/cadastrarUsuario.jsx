@@ -1,7 +1,26 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { useState } from "react";
 
 function CadastrarUsuario() {
+  const [formUser, setFormUser] = useState({
+    nome: "",
+    cpf: "",
+    endereco: "",
+    estado_civil: "",
+    rg: "",
+    email: "",
+    data_nascimento: "",
+    voluntario: "",
+    celular: "",
+    representante_ong: "",
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormUser((prev) => ({ ...prev, [name]: value }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     alert("Formulário enviado!");
@@ -33,6 +52,9 @@ function CadastrarUsuario() {
               </label>
               <input
                 type="text"
+                name="nome"
+                value={formUser.nome}
+                onChange={handleChange}
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
               />
@@ -45,6 +67,9 @@ function CadastrarUsuario() {
               </label>
               <input
                 type="number"
+                name="cpf"
+                value={formUser.cpf}
+                onChange={handleChange}
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
               />
@@ -57,6 +82,9 @@ function CadastrarUsuario() {
               </label>
               <input
                 type="text"
+                name="endereco"
+                value={formUser.endereco}
+                onChange={handleChange}
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
               />
@@ -69,6 +97,9 @@ function CadastrarUsuario() {
               </label>
               <input
                 type="text"
+                name="estado_civil"
+                value={formUser.estado_civil}
+                onChange={handleChange}
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
               />
@@ -81,6 +112,9 @@ function CadastrarUsuario() {
               </label>
               <input
                 type="number"
+                name="rg"
+                value={formUser.rg}
+                onChange={handleChange}
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
               />
@@ -93,6 +127,9 @@ function CadastrarUsuario() {
               </label>
               <input
                 type="email"
+                name="email"
+                value={formUser.email}
+                onChange={handleChange}
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
               />
@@ -105,6 +142,9 @@ function CadastrarUsuario() {
               </label>
               <input
                 type="date"
+                name="data_nascimento"
+                value={formUser.data_nascimento}
+                onChange={handleChange}
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
               />
@@ -117,6 +157,9 @@ function CadastrarUsuario() {
               </label>
               <input
                 type="text"
+                name="voluntario"
+                value={formUser.voluntario}
+                onChange={handleChange}
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
               />
@@ -129,6 +172,9 @@ function CadastrarUsuario() {
               </label>
               <input
                 type="number"
+                name="celular"
+                value={formUser.celular}
+                onChange={handleChange}
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
               />
@@ -141,6 +187,9 @@ function CadastrarUsuario() {
               </label>
               <input
                 type="text"
+                name="representante_ong"
+                value={formUser.representante_ong}
+                onChange={handleChange}
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
               />
