@@ -10,3 +10,8 @@ $ npm install
 Iniciar o servidor FrontEnd:
 
 $ npm run dev
+
+Instalar e iniciar o Backend
+
+//Instalar as dependencias
+pip install fastapi uvicorn pydantic mysql-connector-python python-dotenv

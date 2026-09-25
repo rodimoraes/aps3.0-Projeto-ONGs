@@ -16,14 +16,58 @@ function CadastrarUsuario() {
     representante_ong: "",
   });
 
+  // Função que escuta os eventos e salvando os campos sempre que o usuario digita nos campos
+  //Sem isso ele não consegue escrever nos campos, pois fica voltando para o estado padrão
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormUser((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  // Função dispara o subimit ao enviar o formulario
+  const handleSubmit = async (e) => {
+    // Previne o comportamento padrão do navegador de recarregar a página ao enviar um formulário
     e.preventDefault();
-    alert("Formulário enviado!");
+
+    try {
+      // Executa a requisição assíncrona HTTP POST para o servidor FastAPI
+      const response = await fetch("http://localhost:8000/usuarios", {
+        method: "POST", // Define o método HTTP como POST
+        headers: {
+          "Content-Type": "application/json", // Informa ao servidor que o corpo da requisição é um JSON
+        },
+        // Converte o objeto JavaScript em uma string formatada em JSON
+        body: JSON.stringify(formUser),
+      });
+
+      // Verifica se a resposta retornou um código de sucesso HTTP
+      if (response.ok) {
+        alert("Usuário cadastrado com sucesso!");
+
+        // Reseta todos os campos do formulário para o estado inicial (vazios)
+        setFormUser({
+          nome: "",
+          cpf: "",
+          endereco: "",
+          estado_civil: "",
+          rg: "",
+          email: "",
+          data_nascimento: "",
+          voluntario: "",
+          celular: "",
+          representante_ong: "",
+        });
+      } else {
+        // Se o backend retornar erro, extrai os detalhes do JSON retornado
+        const errorData = await response.json();
+        alert(
+          `Erro ao cadastrar: ${errorData.detail || "Falha na requisição"}`,
+        );
+      }
+    } catch (error) {
+      // Captura erros de rede ou conexão
+      console.error("Erro na requisição:", error);
+      alert("Não foi possível se conectar ao servidor backend.");
+    }
   };
 
   return (
@@ -95,14 +139,20 @@ function CadastrarUsuario() {
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 estado_civil
               </label>
-              <input
+
+              <select
                 type="text"
                 name="estado_civil"
                 value={formUser.estado_civil}
                 onChange={handleChange}
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
-              />
+              >
+                <option value="">Selecione uma Opção</option>
+                <option value="solteiro">Solteiro(a)</option>
+                <option value="casado">Casado(a)</option>
+                <option value="viuvo">Viúvo(a)</option>
+              </select>
             </div>
 
             {/* rg */}
@@ -155,14 +205,19 @@ function CadastrarUsuario() {
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 voluntario
               </label>
-              <input
+
+              <select
                 type="text"
                 name="voluntario"
                 value={formUser.voluntario}
                 onChange={handleChange}
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
-              />
+              >
+                <option value="">Selecione uma Opção</option>
+                <option value="1">Sim</option>
+                <option value="0">Não</option>
+              </select>
             </div>
 
             {/* celular */}
@@ -185,14 +240,18 @@ function CadastrarUsuario() {
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 representante_ong
               </label>
-              <input
+              <select
                 type="text"
                 name="representante_ong"
                 value={formUser.representante_ong}
                 onChange={handleChange}
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
-              />
+              >
+                <option value="">Selecione uma Opção</option>
+                <option value="1">Sim</option>
+                <option value="0">Não</option>
+              </select>
             </div>
 
             {/* Botão de Envio */}
