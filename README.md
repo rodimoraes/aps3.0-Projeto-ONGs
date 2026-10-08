@@ -1,17 +1,95 @@
 # APS 3.0 Projeto ONGs Faculdade Vanguarda 2º Semestre 2026
 
-Instruções para preparar o servidor FrontEnd:
+> > Instruções para preparar o servidor FrontEnd:
+> > #Instalar bibliotecas e iniciar frontend
 
-👨🏻‍💻
-#Instalar bibliotecas do Node
+$ cd frontend # Entra na pasta do frontend
+$ npm install # Instala as bibliotecas do frontend via package.json
+$ npm run dev # Inicia a frontend via Vite
 
-$ npm install
+> > Instruções para preparar o servidor BackEnd:
+> > #Instalar e iniciar o Backend
 
-Iniciar o servidor FrontEnd:
+$ cd backend # Entra na pasta do frontend
+$ pip install fastapi uvicorn pydantic mysql-connector-python python-dotenv # Instala as bibliotecas do backend
+$ python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000 # Inicia o backend (BD)
 
-$ npm run dev
+> > Banco de Dados
+> > // Comando para criar o Banco de Dados MySQL
 
-Instalar e iniciar o Backend
+-- drop database bd_encontreong;
 
-//Instalar as dependencias
-pip install fastapi uvicorn pydantic mysql-connector-python python-dotenv
+create database bd_encontreong;
+use bd_encontreong;
+
+CREATE TABLE usuario
+(
+id_usuario INT PRIMARY KEY AUTO_INCREMENT,  
+ nome VARCHAR(100),  
+ cpf INT,  
+ endereco VARCHAR(100),  
+ estado_civil VARCHAR(100) NOT NULL,  
+ rg VARCHAR(100) NOT NULL,  
+ email VARCHAR(100) NOT NULL,  
+ data_nascimento DATE NOT NULL,  
+ voluntario BOOLEAN NOT NULL,  
+ celular INT NOT NULL,  
+ representante_ong BOOLEAN NOT NULL,  
+ UNIQUE (cpf,email,celular)
+);
+
+CREATE TABLE ong
+(
+id_ong INT PRIMARY KEY AUTO_INCREMENT,  
+ nome VARCHAR(100),  
+ id_usuario_representante INT,  
+ id_categoria INT NOT NULL,  
+ telefone INT,  
+ endereco VARCHAR(100),  
+ denominacao_social VARCHAR(100) NOT NULL,  
+ sigla VARCHAR(100),  
+ objetivo_social_finalidade VARCHAR(100) NOT NULL,  
+ RCPJ INT NOT NULL,  
+ CNAE VARCHAR(100) NOT NULL,  
+ inscricao_municipal VARCHAR(100) NOT NULL,  
+ como_ajudar VARCHAR(100)  
+);
+
+CREATE TABLE campanha
+(
+id_campanha INT PRIMARY KEY AUTO_INCREMENT,  
+ nome VARCHAR(100),  
+ id_ong INT NOT NULL,  
+ descricao VARCHAR(100) NOT NULL,  
+ status VARCHAR(100),  
+ id_tipo_campanha INT NOT NULL,  
+ meta INT  
+);
+
+CREATE TABLE categoria
+(
+id_categoria INT PRIMARY KEY AUTO_INCREMENT,  
+ nome VARCHAR(100)  
+);
+
+CREATE TABLE tipo_campanha
+(
+id_tipo_campanha INT PRIMARY KEY AUTO_INCREMENT,  
+ nome VARCHAR(100) NOT NULL  
+);
+
+CREATE TABLE voluntario_campanha
+(
+id_voluntario_campanha INT PRIMARY KEY AUTO_INCREMENT,  
+ id_campanha INT,  
+ id_usuario INT  
+);
+
+-- ALTER TABLE ong ADD FOREIGN KEY(id_usuario_representante) REFERENCES usuario (id_usuario_representante);
+-- ALTER TABLE ong ADD FOREIGN KEY(id_categoria) REFERENCES categoria (id_categoria);
+-- ALTER TABLE campanha ADD FOREIGN KEY(id_ong) REFERENCES ong (id_ong);
+-- ALTER TABLE campanha ADD FOREIGN KEY(id_tipo_campanha) REFERENCES tipo_campanha (id_tipo_campanha);
+-- ALTER TABLE voluntario_campanha ADD FOREIGN KEY(id_campanha) REFERENCES campanha (id_campanha);
+-- ALTER TABLE voluntario_campanha ADD FOREIGN KEY(id_usuario) REFERENCES usuario (id_usuario);
+
+----------------------FIM-----------------------------
