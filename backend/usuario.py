@@ -26,7 +26,6 @@ class CriarUsuario(BaseModel):
     cpf: str
     endereco: str
     estado_civil: str
-    rg: str
     email: str
     data_nascimento: str
     voluntario: str
@@ -42,14 +41,14 @@ def cadastrar_usuario(usuario: CriarUsuario):
 
         sql = """
             INSERT INTO usuario (
-                nome, cpf, endereco, estado_civil, rg, 
+                nome, cpf, endereco, estado_civil,
                 email, data_nascimento, voluntario, celular, representante_ong
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         valores = (
             usuario.nome, usuario.cpf, usuario.endereco, usuario.estado_civil,
-            usuario.rg, usuario.email, usuario.data_nascimento,
-            usuario.voluntario, usuario.celular, usuario.representante_ong
+            usuario.email, usuario.data_nascimento,
+            usuario.voluntario, usuario.celular
         )
 
         cursor.execute(sql, valores)

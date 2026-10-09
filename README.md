@@ -17,6 +17,8 @@ $ python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000 # Inicia o ba
 > > Banco de Dados
 > > // Comando para criar o Banco de Dados MySQL
 
+// COLOCAR O VOLUNTARIO E O REPRESENTANTE_ONG COMO DEFAULT FALSE OU 0
+
 -- drop database bd_encontreong;
 
 create database bd_encontreong;

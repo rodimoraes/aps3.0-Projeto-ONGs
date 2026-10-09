@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
+import { maskCPF, maskCelular } from "../../js/masks";
 
 function CadastrarUsuario() {
   const [formUser, setFormUser] = useState({
@@ -8,19 +9,21 @@ function CadastrarUsuario() {
     cpf: "",
     endereco: "",
     estado_civil: "",
-    rg: "",
     email: "",
     data_nascimento: "",
-    voluntario: "",
     celular: "",
-    representante_ong: "",
   });
 
   // Função que escuta os eventos e salvando os campos sempre que o usuario digita nos campos
-  //Sem isso ele não consegue escrever nos campos, pois fica voltando para o estado padrão
+  //Isso também aplica mascará que formata
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormUser((prev) => ({ ...prev, [name]: value }));
+    let formattedValue = value;
+
+    if (name === "cpf") formattedValue = maskCPF(value);
+    if (name === "celular") formattedValue = maskCelular(value);
+
+    setFormUser((prev) => ({ ...prev, [name]: formattedValue }));
   };
 
   // Função dispara o subimit ao enviar o formulario
@@ -49,12 +52,9 @@ function CadastrarUsuario() {
           cpf: "",
           endereco: "",
           estado_civil: "",
-          rg: "",
           email: "",
           data_nascimento: "",
-          voluntario: "",
           celular: "",
-          representante_ong: "",
         });
       } else {
         // Se o backend retornar erro, extrai os detalhes do JSON retornado
@@ -92,7 +92,7 @@ function CadastrarUsuario() {
             {/* nome */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                nome
+                Nome Completo
               </label>
               <input
                 type="text"
@@ -107,10 +107,10 @@ function CadastrarUsuario() {
             {/* cpf */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                cpf
+                CPF
               </label>
               <input
-                type="number"
+                type="text"
                 name="cpf"
                 value={formUser.cpf}
                 onChange={handleChange}
@@ -122,7 +122,7 @@ function CadastrarUsuario() {
             {/* endereco */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                endereco
+                Endereço ()
               </label>
               <input
                 type="text"
@@ -137,7 +137,7 @@ function CadastrarUsuario() {
             {/* estado_civil */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                estado_civil
+                Estado Civil
               </label>
 
               <select
@@ -153,21 +153,6 @@ function CadastrarUsuario() {
                 <option value="casado">Casado(a)</option>
                 <option value="viuvo">Viúvo(a)</option>
               </select>
-            </div>
-
-            {/* rg */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                rg
-              </label>
-              <input
-                type="number"
-                name="rg"
-                value={formUser.rg}
-                onChange={handleChange}
-                required
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
-              />
             </div>
 
             {/* email */}
@@ -200,58 +185,19 @@ function CadastrarUsuario() {
               />
             </div>
 
-            {/* voluntario */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                voluntario
-              </label>
-
-              <select
-                type="text"
-                name="voluntario"
-                value={formUser.voluntario}
-                onChange={handleChange}
-                required
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
-              >
-                <option value="">Selecione uma Opção</option>
-                <option value="1">Sim</option>
-                <option value="0">Não</option>
-              </select>
-            </div>
-
             {/* celular */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 celular
               </label>
               <input
-                type="number"
+                type="text"
                 name="celular"
                 value={formUser.celular}
                 onChange={handleChange}
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
               />
-            </div>
-
-            {/* representante_ong */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                representante_ong
-              </label>
-              <select
-                type="text"
-                name="representante_ong"
-                value={formUser.representante_ong}
-                onChange={handleChange}
-                required
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
-              >
-                <option value="">Selecione uma Opção</option>
-                <option value="1">Sim</option>
-                <option value="0">Não</option>
-              </select>
             </div>
 
             {/* Botão de Envio */}
