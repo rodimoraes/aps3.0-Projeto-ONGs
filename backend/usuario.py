@@ -1,13 +1,12 @@
 # backend/usuario.py
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 import mysql.connector
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
-# Em vez de app = FastAPI(), usamos APIRouter:
 router = APIRouter(
     prefix="/usuarios",
     tags=["Usuários"]
@@ -26,11 +25,11 @@ class CriarUsuario(BaseModel):
     cpf: str
     endereco: str
     estado_civil: str
-    email: str
+    email: EmailStr | str
     data_nascimento: str
-    voluntario: str
     celular: str
-    representante_ong: str
+    voluntario: bool = False
+    representante_ong: bool = False
 
 
 @router.post("")
@@ -42,13 +41,19 @@ def cadastrar_usuario(usuario: CriarUsuario):
         sql = """
             INSERT INTO usuario (
                 nome, cpf, endereco, estado_civil,
-                email, data_nascimento, voluntario, celular, representante_ong
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                email, data_nascimento, celular, voluntario, representante_ong
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         valores = (
-            usuario.nome, usuario.cpf, usuario.endereco, usuario.estado_civil,
-            usuario.email, usuario.data_nascimento,
-            usuario.voluntario, usuario.celular
+            usuario.nome,
+            usuario.cpf,
+            usuario.endereco,
+            usuario.estado_civil,
+            usuario.email,
+            usuario.data_nascimento,
+            usuario.celular,
+            usuario.voluntario,
+            usuario.representante_ong
         )
 
         cursor.execute(sql, valores)
