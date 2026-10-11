@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Importa os roteadores de cada módulo
 from usuario import router as usuario_router
+from ong import router as ong_router
 
 app = FastAPI(title="EncontreONG API")
 
@@ -17,6 +18,7 @@ app.add_middleware(
 
 # Conecta os roteadores à aplicação principal
 app.include_router(usuario_router) #usuario.py
+app.include_router(ong_router) #ong.py
 
 @app.get("/")
 def root():
