@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Trash2, Plus, Building2 } from "lucide-react";
+import { ArrowLeft, Trash2, Plus, Building2, Pencil } from "lucide-react";
 function ListarOngs() {
   const [ongs, setOngs] = useState([]);
   const [loading, setLoading] = useState(true);
   // 1. READ: Função para buscar as ONGs salvas no MySQL via API
   const carregarOngs = async () => {
     try {
-      const response = await fetch("http://localhost:8000/ongs");
+      const response = await fetch("http://127.0.0.1:8000/ongs");
       if (response.ok) {
         const data = await response.json();
         setOngs(data);
@@ -16,12 +16,12 @@ function ListarOngs() {
       }
     } catch (error) {
       console.error("Erro na busca:", error);
-      alert("Não foi possível se conectar ao servidor.");
+      alert("Não foi possível se conectar ao servidor backend.");
     } finally {
       setLoading(false);
     }
   };
-  // Carrega os dados automaticamente assim que a página abre
+  // Carrega os dados automaticamente ao abrir a página
   useEffect(() => {
     carregarOngs();
   }, []);
@@ -32,15 +32,16 @@ function ListarOngs() {
     );
     if (!confirmacao) return;
     try {
-      const response = await fetch(`http://localhost:8000/ongs/${id_ong}`, {
+      const response = await fetch(`http://127.0.0.1:8000/ongs/${id_ong}`, {
         method: "DELETE",
       });
       if (response.ok) {
         alert("ONG removida com sucesso!");
-        // Atualiza o estado local para remover o item da tela imediatamente
+        // Atualiza a lista local removendo o item sem recarregar a tela
         setOngs((prevOngs) => prevOngs.filter((ong) => ong.id_ong !== id_ong));
       } else {
-        alert("Erro ao excluir a ONG.");
+        const errorData = await response.json();
+        alert(`Erro ao excluir: ${errorData.detail || "Falha na requisição"}`);
       }
     } catch (error) {
       console.error("Erro ao deletar:", error);
@@ -51,6 +52,7 @@ function ListarOngs() {
     <div className="min-h-screen bg-slate-50 px-4 py-8">
       <div className="max-w-4xl mx-auto">
         {/* Cabeçalho de Navegação */}
+
         <div className="flex items-center justify-between mb-6">
           <Link
             to="/"
@@ -76,7 +78,10 @@ font-medium text-sm transition-colors"
           <p className="text-slate-500 text-center py-8">Carregando ONGs...</p>
         ) : ongs.length === 0 ? (
           /* Mensagem para lista vazia */
-          <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center">
+          <div
+            className="bg-white p-8 rounded-2xl border border-slate-200 text-center
+shadow-xs"
+          >
             <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <p className="text-slate-600 font-medium mb-2">
               Nenhuma ONG cadastrada ainda.
@@ -105,7 +110,7 @@ flex-col justify-between"
                     {ong.sigla && (
                       <span
                         className="px-2.5 py-0.5 text-xs font-semibold text-blue-700
-bg-blue-50 rounded-full"
+bg-blue-50 rounded-full shrink-0"
                       >
                         {ong.sigla}
                       </span>
@@ -125,8 +130,16 @@ bg-blue-50 rounded-full"
                     <strong>Objetivo:</strong> {ong.objetivo_social_finalidade}
                   </p>
                 </div>
-                {/* Ações (Deletar) */}
-                <div className="pt-3 border-t border-slate-100 flex items-center justifyend">
+                {/* Ações (Editar e Deletar) */}
+                <div className="pt-3 border-t border-slate-100 flex items-center justifyend gap-2">
+                  <Link
+                    to={`/editar-ong/${ong.id_ong}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs fontmedium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="Editar ONG"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    <span>Editar</span>
+                  </Link>
                   <button
                     onClick={() => handleDelete(ong.id_ong, ong.nome)}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs fontmedium text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"

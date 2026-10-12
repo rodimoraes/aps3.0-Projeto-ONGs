@@ -120,7 +120,7 @@ def atualizar_ong(id_ong: int,ong: OngSchema):
         sql = """
             UPDATE ong SET
                 nome=%s,id_usuario_representante=%s,id_categoria=%s,
-                telefone=%s,endereco=%s,denominacao_social=%s,sigla=%s,objetivo_social_finalidade=%s,RCPJ=%s,CNAE=%s,inscricao_muinicipal=%s,como_ajudar=%s WHERE id_ong=%s
+                telefone=%s,endereco=%s,denominacao_social=%s,sigla=%s,objetivo_social_finalidade=%s,RCPJ=%s,CNAE=%s,inscricao_municipal=%s,como_ajudar=%s WHERE id_ong=%s
         """
         valores=(
             ong.nome,ong.id_usuario_representante,ong.id_categoria,
@@ -139,15 +139,31 @@ def deletar_ong(id_ong: int):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor()
-        cursor.execute("DELETE FROM ong WHERE id_ong = %s",(id_ong))
+
+    # Executa a exclusão usando o nome exato da coluna do MySQL (id_ong)
+        sql = "DELETE FROM ong WHERE id_ong = %s"
+        cursor.execute(sql, (id_ong,))
         conexao.commit()
+
+ # Verifica quantas linhas foram deletadas
+        linhas_afetadas = cursor.rowcount
+
         cursor.close()
         conexao.close()
-        return{"status":"sucesso","mensagem":"ONG removida com sucesso!"}
-    except mysql.connector.Error as err:
-        raise HTTPException(status_code=500,detail=f"Erro no banco de dados:{err}")
 
-    
+        if linhas_afetadas == 0:
+            raise HTTPException(status_code=404, detail="ONG não encontrada no banco dedados.")
+
+        return {"status": "sucesso", "mensagem": "ONG removida com sucesso!"}
+
+    except mysql.connector.Error as err:
+        # Imprime o erro exato do MySQL no terminal do Uvicorn para facilitar o diagnóstico
+        print(f"---> ERRO DO MYSQL AO DELETAR: {err}")
+        raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
+    except Exception as e:
+        # Captura qualquer outro erro de sintaxe do Python
+        print(f"---> ERRO DE PYTHON AO DELETAR: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro interno no servidor: {e}")
     
     
     
