@@ -66,10 +66,13 @@ function Header({ onMenuClick, onSearch }) {
 
         {/* LADO DIREITO: Botões de doação e cadastro */}
         <div className="flex items-center gap-2 shrink-0">
-          <button className="hidden md:flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors cursor-pointer">
+          <Link
+            to="/ongs"
+            className="hidden md:flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors cursor-pointer"
+          >
             <Heart className="w-4 h-4 fill-blue-600/20 text-blue-600" />
             <span>Doar</span>
-          </button>
+          </Link>
 
           <Link
             to="/cadastrar-ong"

@@ -49,21 +49,21 @@ def cadastrar_ong(ong: OngSchema): # Cria a função que recebe os dados do form
         cursor = conexao.cursor() # O "cursor" é o objeto encarregado de executar os comandos SQL no MySQL.
         # Prepara a instrução SQL de inserção. Usamos `%s` como marcadores de posição para evitar vulnerabilidades de *SQL Injection*.
         sql = """
- INSERT INTO ong (
- nome,
- id_usuario_representante,
- id_categoria,
- telefone,
- endereco,
- denominacao_social,
- sigla,
- objetivo_social_finalidade,
- RCPJ,
- CNAE,
- inscricao_municipal,
- como_ajudar
- ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-"""
+            INSERT INTO ong (
+            nome,
+            id_usuario_representante,
+            id_categoria,
+            telefone,
+            endereco,
+            denominacao_social,
+            sigla,
+            objetivo_social_finalidade,
+            RCPJ,
+            CNAE,
+            inscricao_municipal,
+            como_ajudar
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """
 
         # Cria uma tupla contendo os valores na exata ordem dos marcadores `%s`.
         valores=(
@@ -87,13 +87,13 @@ def cadastrar_ong(ong: OngSchema): # Cria a função que recebe os dados do form
 def listar_ongs():
     try:
         conexao = get_db_connection()
-        cursor = conexao.cursor(dictionay=True) #O parâmetro `dictionary=True` faz o MySQL retornar cada registro como um dicionário Python (`{"nome": "ONG A", "telefone": 123}`), facilidade imediata para conversão em JSON.
+        cursor = conexao.cursor(dictionary=True) #O parâmetro `dictionary=True` faz o MySQL retornar cada registro como um dicionário Python (`{"nome": "ONG A", "telefone": 123}`), facilidade imediata para conversão em JSON.
         cursor.execute("SELECT * FROM ong")
         ongs = cursor.fetchall() #Coleta todas as linhas encontradas e as armazena na variável `ongs`.
         cursor.close()
         conexao.close()
         return ongs
-    except mysql.connetor.Error as err:
+    except mysql.connector.Error as err:
             raise HTTPException(status_code=500,detail=f"Erro no banco de dados:{err}")
 @router.get("/{id_ong}")
 def buscar_ong(id_ong: int):

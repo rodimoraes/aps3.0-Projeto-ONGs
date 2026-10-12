@@ -8,6 +8,7 @@ import "./index.css";
 import Home from "./pages/home";
 import CadastrarOng from "./pages/cadastrarOng";
 import CadastrarUsuario from "./pages/cadastrarUsuario";
+import ListarOngs from "./pages/ListarOngs";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -16,6 +17,7 @@ createRoot(document.getElementById("root")).render(
         <Route path="/" element={<Home />} />
         <Route path="/cadastrar-ong" element={<CadastrarOng />} />
         <Route path="/cadastrar-usuario" element={<CadastrarUsuario />} />
+        <Route path="/ongs" element={<ListarOngs />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
