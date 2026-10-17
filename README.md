@@ -11,7 +11,7 @@ $ npm run dev # Inicia a frontend via Vite
 > > #Instalar e iniciar o Backend
 
 $ cd backend # Entra na pasta do frontend
-$ pip install fastapi uvicorn pydantic 'pydantic[email]' mysql-connector-python python-dotenv # Instala as bibliotecas do backend
+$ pip install fastapi uvicorn pydantic 'pydantic[email]' 'python-jose[cryptography]' bcrypt mysql-connector-python python-dotenv # Instala as bibliotecas do backend
 $ python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000 # Inicia o backend (BD)
 
 > > Banco de Dados
@@ -33,8 +33,9 @@ id_usuario INT PRIMARY KEY AUTO_INCREMENT,
  estado_civil VARCHAR(100) NOT NULL,  
  email VARCHAR(100) NOT NULL,  
  data_nascimento DATE NOT NULL,  
- voluntario BOOLEAN NOT NULL,  
- celular VARCHAR(11) NOT NULL,  
+ celular VARCHAR(11) NOT NULL,
+senha VARCHAR(255) NOT NULL
+voluntario BOOLEAN NOT NULL,  
  representante_ong BOOLEAN NOT NULL,  
  UNIQUE (cpf,email,celular)
 );

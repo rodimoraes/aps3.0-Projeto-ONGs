@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import "./index.css";
 import Home from "./pages/home";
+import Login from "./pages/login";
 
 import CadastrarUsuario from "./pages/usuario/cadastrarUsuario";
 import ListarUsuarios from "./pages/usuario/ListarUsuarios";
@@ -18,6 +19,7 @@ createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
 
         <Route path="/cadastrar-ong" element={<CadastrarOng />} />
         <Route path="/ongs" element={<ListarOngs />} />

@@ -3,7 +3,6 @@ import { ArrowLeft, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { maskCPF, maskCelular } from "../../../js/masks";
 
-// Configuração dos campos do formulário para mapeamento (.map)
 const CAMPOS_FORMULARIO = [
   {
     name: "nome",
@@ -31,6 +30,13 @@ const CAMPOS_FORMULARIO = [
     label: "E-mail",
     type: "email",
     placeholder: "exemplo@email.com",
+    required: true,
+  },
+  {
+    name: "senha",
+    label: "Senha",
+    type: "password",
+    placeholder: "Digite uma senha segura",
     required: true,
   },
   {
@@ -69,8 +75,11 @@ function CadastrarUsuario() {
     endereco: "",
     estado_civil: "",
     email: "",
+    senha: "",
     data_nascimento: "",
     celular: "",
+    voluntario: false,
+    representante_ong: false,
   });
 
   const handleChange = (e) => {
@@ -103,8 +112,8 @@ function CadastrarUsuario() {
       });
 
       if (response.ok) {
-        alert("Usuário cadastrado com sucesso!");
-        navigate("/usuarios");
+        alert("Usuário cadastrado com sucesso! Por favor, faça seu login.");
+        navigate("/login");
       } else {
         const errorData = await response.json();
         alert(
@@ -125,7 +134,7 @@ function CadastrarUsuario() {
           className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-700 font-medium mb-6 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span>Voltar para a lista</span>
+          <span>Voltar</span>
         </Link>
 
         <div className="bg-white rounded-2xl shadow-xs border border-slate-200 p-6 sm:p-8">
@@ -139,7 +148,6 @@ function CadastrarUsuario() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Mapeamento dinâmico dos campos */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {CAMPOS_FORMULARIO.map((campo) => {
                 const isFullWidth =

@@ -1,10 +1,12 @@
 # backend/usuario.py
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 import mysql.connector
 from dotenv import load_dotenv
 import os
+
+from auth import gerar_hash_senha, verificar_senha, criar_token_acesso, obter_usuario_atual
 
 load_dotenv()
 
@@ -21,7 +23,22 @@ def get_db_connection():
         database=os.getenv('DB_NAME', 'bd_encontreong')
     )
 
+
 class UsuarioSchema(BaseModel):
+    nome: str
+    cpf: str
+    endereco: str
+    estado_civil: str
+    email: EmailStr
+    senha: str
+    data_nascimento: str
+    celular: str
+    voluntario: bool = False
+    representante_ong: bool = False
+
+
+# Schema separado para UPDATE (não exige senha — evita 422 no editarUsuario.jsx)
+class UsuarioUpdateSchema(BaseModel):
     nome: str
     cpf: str
     endereco: str
@@ -33,18 +50,27 @@ class UsuarioSchema(BaseModel):
     representante_ong: bool = False
 
 
-# 1. C - Criar
+class LoginSchema(BaseModel):
+    email: EmailStr
+    senha: str
+
+
+# ============================================================
+# 1. C - CREATE (com hash de senha)
+# ============================================================
 @router.post("")
 def cadastrar_usuario(usuario: UsuarioSchema):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor()
 
+        senha_hash = gerar_hash_senha(usuario.senha)
+
         sql = """
             INSERT INTO usuario (
                 nome, cpf, endereco, estado_civil,
-                email, data_nascimento, celular, voluntario, representante_ong
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                email, senha, data_nascimento, celular, voluntario, representante_ong
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         valores = (
             usuario.nome,
@@ -52,6 +78,7 @@ def cadastrar_usuario(usuario: UsuarioSchema):
             usuario.endereco,
             usuario.estado_civil,
             usuario.email,
+            senha_hash,
             usuario.data_nascimento,
             usuario.celular,
             usuario.voluntario,
@@ -66,8 +93,8 @@ def cadastrar_usuario(usuario: UsuarioSchema):
         conexao.close()
 
         return {
-            "status": "sucesso", 
-            "mensagem": "Usuário cadastrado com sucesso!", 
+            "status": "sucesso",
+            "mensagem": "Usuário cadastrado com sucesso!",
             "id": novo_id
         }
 
@@ -75,16 +102,64 @@ def cadastrar_usuario(usuario: UsuarioSchema):
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
-# 2. R - Ler tudo 
+# ============================================================
+# Login (Autenticação)
+# ============================================================
+@router.post("/login")
+def login(dados: LoginSchema):
+    try:
+        conexao = get_db_connection()
+        cursor = conexao.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM usuario WHERE email = %s", (dados.email,))
+        usuario = cursor.fetchone()
+
+        cursor.close()
+        conexao.close()
+
+        if not usuario or not verificar_senha(dados.senha, usuario["senha"]):
+            raise HTTPException(status_code=400, detail="E-mail ou senha incorretos.")
+
+        token = criar_token_acesso(data={"sub": usuario["email"], "id_usuario": usuario["id_usuario"]})
+
+        return {
+            "status": "sucesso",
+            "access_token": token,
+            "token_type": "bearer",
+            "usuario": {
+                "id_usuario": usuario["id_usuario"],
+                "nome": usuario["nome"],
+                "email": usuario["email"],
+                "representante_ong": bool(usuario["representante_ong"])
+            }
+        }
+    except mysql.connector.Error as err:
+        raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
+
+
+# ============================================================
+# Rota protegida de teste (perfil logado)
+# ============================================================
+@router.get("/me")
+def perfil_usuario_logado(usuario_atual: dict = Depends(obter_usuario_atual)):
+    return usuario_atual
+
+
+# ============================================================
+# 2. R - READ ALL
+# ============================================================
 @router.get("")
 def listar_usuarios():
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM usuario")
+        cursor.execute("""
+            SELECT id_usuario, nome, cpf, endereco, estado_civil, email,
+                   data_nascimento, celular, voluntario, representante_ong
+            FROM usuario
+        """)
         usuarios = cursor.fetchall()
 
-        # Converte a data_nascimento para string legível ISO (YYYY-MM-DD) se vier como date do MySQL
         for u in usuarios:
             if u.get("data_nascimento"):
                 u["data_nascimento"] = str(u["data_nascimento"])
@@ -96,13 +171,19 @@ def listar_usuarios():
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
-# 3. R - Ler um especifico
+# ============================================================
+# 3. R - READ ONE
+# ============================================================
 @router.get("/{id_usuario}")
 def buscar_usuario(id_usuario: int):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM usuario WHERE id_usuario = %s", (id_usuario,))
+        cursor.execute("""
+            SELECT id_usuario, nome, cpf, endereco, estado_civil, email,
+                   data_nascimento, celular, voluntario, representante_ong
+            FROM usuario WHERE id_usuario = %s
+        """, (id_usuario,))
         usuario = cursor.fetchone()
 
         cursor.close()
@@ -119,9 +200,11 @@ def buscar_usuario(id_usuario: int):
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
-# 4. U - Atualizar
+# ============================================================
+# 4. U - UPDATE
+# ============================================================
 @router.put("/{id_usuario}")
-def atualizar_usuario(id_usuario: int, usuario: UsuarioSchema):
+def atualizar_usuario(id_usuario: int, usuario: UsuarioUpdateSchema):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor()
@@ -148,20 +231,22 @@ def atualizar_usuario(id_usuario: int, usuario: UsuarioSchema):
 
         cursor.execute(sql, valores)
         conexao.commit()
-        linhas_afetadas = cursor.rowcount
+        afetadas = cursor.rowcount
 
         cursor.close()
         conexao.close()
 
-        if linhas_afetadas == 0:
-            raise HTTPException(status_code=404, detail="Usuário não encontrado para atualização.")
+        if afetadas == 0:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado.")
 
         return {"status": "sucesso", "mensagem": "Usuário atualizado com sucesso!"}
     except mysql.connector.Error as err:
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
-# 5. D - Deletar
+# ============================================================
+# 5. D - DELETE
+# ============================================================
 @router.delete("/{id_usuario}")
 def deletar_usuario(id_usuario: int):
     try:
@@ -170,14 +255,19 @@ def deletar_usuario(id_usuario: int):
 
         cursor.execute("DELETE FROM usuario WHERE id_usuario = %s", (id_usuario,))
         conexao.commit()
-        linhas_afetadas = cursor.rowcount
+        afetadas = cursor.rowcount
 
         cursor.close()
         conexao.close()
 
-        if linhas_afetadas == 0:
+        if afetadas == 0:
             raise HTTPException(status_code=404, detail="Usuário não encontrado.")
 
         return {"status": "sucesso", "mensagem": "Usuário removido com sucesso!"}
     except mysql.connector.Error as err:
+        if err.errno == 1451:
+            raise HTTPException(
+                status_code=409,
+                detail="Não é possível excluir: usuário está vinculado a uma ONG."
+            )
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")

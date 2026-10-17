@@ -102,12 +102,12 @@ function CadastrarOng() {
     <div className="min-h-screen bg-slate-50 px-4 py-8">
       <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-xs border border-slate200 p-6 sm:p-8">
         <Link
-          to="/"
+          to="/ongs"
           className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-700
 font-medium mb-6 text-sm transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Voltar para o início</span>
+          <span>Voltar</span>
         </Link>
         <h1 className="text-2xl font-bold text-slate-800 mb-6">
           Cadastrar ONG
