@@ -14,6 +14,9 @@ import CadastrarOng from "./pages/cadastrarOng";
 import ListarOngs from "./pages/ListarOngs";
 import EditarOng from "./pages/editarOng";
 
+import ListarCampanhas from "./pages/listarCampanhas";
+import CadastrarCampanha from "./pages/cadastrarCampanha";
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
@@ -28,6 +31,16 @@ createRoot(document.getElementById("root")).render(
         <Route path="/cadastrar-usuario" element={<CadastrarUsuario />} />
         <Route path="/usuarios" element={<ListarUsuarios />} />
         <Route path="/editar-usuario/:id" element={<EditarUsuario />} />
+
+        <Route path="/ongs/:id_ong/campanhas" element={<ListarCampanhas />} />
+        <Route
+          path="/ongs/:id_ong/campanhas/cadastrar"
+          element={<CadastrarCampanha />}
+        />
+        <Route
+          path="/campanhas/editar/:id_campanha"
+          element={<CadastrarCampanha />}
+        />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

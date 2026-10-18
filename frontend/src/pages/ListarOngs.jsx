@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Trash2, Plus, Building2, Pencil } from "lucide-react";
+import {
+  ArrowLeft,
+  Trash2,
+  Plus,
+  Building2,
+  Pencil,
+  Megaphone,
+} from "lucide-react";
 import Header from "../components/header";
 
 function ListarOngs() {
@@ -156,6 +163,32 @@ bg-blue-50 rounded-full shrink-0"
                       <Trash2 className="w-4 h-4" />
                       <span>Excluir</span>
                     </button>
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2 flexwrap">
+                      <Link
+                        to={`/ongs/${ong.id_ong}/campanhas`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium textemerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
+                        title="Gerenciar Campanhas da ONG"
+                      >
+                        <Megaphone className="w-4 h-4" />
+                        <span>Campanhas</span>
+                      </Link>
+                      <Link
+                        to={`/editar-ong/${ong.id_ong}`}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Editar ONG"
+                      >
+                        <Pencil className="w-4 h-4" />
+                        <span>Editar</span>
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(ong.id_ong, ong.nome)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                        title="Excluir ONG"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span>Excluir</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

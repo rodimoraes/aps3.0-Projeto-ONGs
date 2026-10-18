@@ -57,15 +57,17 @@ id_ong INT PRIMARY KEY AUTO_INCREMENT,
  como_ajudar VARCHAR(100)  
 );
 
-CREATE TABLE campanha
-(
-id_campanha INT PRIMARY KEY AUTO_INCREMENT,  
- nome VARCHAR(100),  
- id_ong INT NOT NULL,  
- descricao VARCHAR(100) NOT NULL,  
- status VARCHAR(100),  
- id_tipo_campanha INT NOT NULL,  
- meta INT  
+CREATE TABLE IF NOT EXISTS campanha (
+id_campanha INT AUTO_INCREMENT PRIMARY KEY,
+id_ong INT NOT NULL,
+titulo VARCHAR(150) NOT NULL,
+descricao TEXT NOT NULL,
+data_inicio DATE NOT NULL,
+data_fim DATE,
+meta_arrecadacao DECIMAL(10, 2),
+valor_arrecadado DECIMAL(10, 2) DEFAULT 0.00,
+status VARCHAR(50) DEFAULT 'ativa',
+FOREIGN KEY (id_ong) REFERENCES ong(id_ong) ON DELETE CASCADE
 );
 
 CREATE TABLE categoria
