@@ -34,7 +34,7 @@ id_usuario INT PRIMARY KEY AUTO_INCREMENT,
  email VARCHAR(100) NOT NULL,  
  data_nascimento DATE NOT NULL,  
  celular VARCHAR(11) NOT NULL,
-senha VARCHAR(255) NOT NULL
+senha VARCHAR(255) NOT NULL,
 voluntario BOOLEAN NOT NULL,  
  representante_ong BOOLEAN NOT NULL,  
  UNIQUE (cpf,email,celular)
