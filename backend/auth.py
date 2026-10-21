@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "sua_chave_secreta_super_segura_aqui_123")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "SenhaSuperSecreta")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 
