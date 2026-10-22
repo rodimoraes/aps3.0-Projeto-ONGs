@@ -6,18 +6,19 @@ import {
   Megaphone,
   Image as ImageIcon,
   Plus,
-  Calendar,
-  DollarSign,
-  MapPin,
   Mail,
   Phone,
+  MapPin,
   Building2,
   TrendingUp,
   Trash2,
   CheckCircle,
   FileText,
-  Eye
+  Eye,
+  Upload,
+  Loader2,
 } from "lucide-react";
+import { uploadImageToImgBB } from "../../services/imgbb.js";
 
 function DetalhesOng() {
   const { id_ong } = useParams();
@@ -27,7 +28,14 @@ function DetalhesOng() {
   const [imagens, setImagens] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Carrega todos os dados da ONG (Cadastro, Campanhas e Fotos) em paralelo
+  // Estados para upload de imagem na Galeria da ONG
+  const [uploading, setUploading] = useState(false);
+  const [novaImagem, setNovaImagem] = useState({
+    url: "",
+    descricao: "",
+  });
+
+  // Carrega todos os dados da ONG (Cadastro, Campanhas e Fotos)
   useEffect(() => {
     const carregarPainel = async () => {
       try {
@@ -67,6 +75,80 @@ function DetalhesOng() {
     carregarPainel();
   }, [id_ong, navigate]);
 
+  // Handler para upload de imagem no ImgBB
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const urlEnvio = await uploadImageToImgBB(file);
+      setNovaImagem((prev) => ({ ...prev, url: urlEnvio }));
+    } catch (error) {
+      alert(`Erro no upload da imagem: ${error.message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Cadastra foto na Galeria da ONG
+  const handleCadastrarFoto = async (e) => {
+    e.preventDefault();
+    if (!novaImagem.url || !novaImagem.descricao) {
+      alert("Por favor, faça o upload da imagem e preencha a descrição.");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/imagens", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_ong: Number(id_ong),
+          id_campanha: null,
+          url: novaImagem.url,
+          descricao: novaImagem.descricao,
+        }),
+      });
+
+      if (response.ok) {
+        alert("Foto adicionada à galeria da ONG!");
+        const res = await fetch(`http://127.0.0.1:8000/imagens/ong/${id_ong}`);
+        if (res.ok) {
+          const data = await res.json();
+          setImagens(data);
+        }
+        setNovaImagem({ url: "", descricao: "" });
+      } else {
+        const errorData = await response.json();
+        alert(`Erro: ${errorData.detail}`);
+      }
+    } catch (error) {
+      console.error("Erro ao cadastrar foto na ONG:", error);
+      alert("Erro de conexão com o servidor.");
+    }
+  };
+
+  // Função para excluir foto da galeria
+  const handleDeleteFoto = async (id_img) => {
+    if (!window.confirm("Deseja realmente excluir esta foto da galeria?"))
+      return;
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/imagens/${id_img}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        alert("Foto removida!");
+        setImagens((prev) => prev.filter((img) => img.id_img !== id_img));
+      } else {
+        alert("Erro ao remover foto.");
+      }
+    } catch (error) {
+      console.error("Erro ao deletar foto:", error);
+      alert("Erro ao se conectar com o servidor.");
+    }
+  };
+
   // Função para excluir uma campanha diretamente do painel
   const handleDeleteCampanha = async (id_campanha, titulo) => {
     if (!window.confirm(`Deseja realmente excluir a campanha "${titulo}"?`))
@@ -75,9 +157,7 @@ function DetalhesOng() {
     try {
       const res = await fetch(
         `http://127.0.0.1:8000/campanhas/${id_campanha}`,
-        {
-          method: "DELETE",
-        },
+        { method: "DELETE" },
       );
 
       if (res.ok) {
@@ -104,7 +184,6 @@ function DetalhesOng() {
     );
   }
 
-  // Cálculos para os cards de métricas
   const totalArrecadado = campanhas.reduce(
     (acc, c) => acc + Number(c.valor_arrecadado || 0),
     0,
@@ -124,7 +203,6 @@ function DetalhesOng() {
             <span>Voltar para Lista de ONGs</span>
           </Link>
 
-          {/* Botões de Ação Principal */}
           <div className="flex items-center gap-2 flex-wrap">
             <Link
               to={`/editar-ong/${id_ong}`}
@@ -132,13 +210,6 @@ function DetalhesOng() {
             >
               <Pencil className="w-4 h-4 text-slate-500" />
               <span>Editar ONG</span>
-            </Link>
-            <Link
-              to={`/ongs/${id_ong}/imagens`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl transition-all"
-            >
-              <ImageIcon className="w-4 h-4" />
-              <span>Gerenciar Fotos</span>
             </Link>
             <Link
               to={`/ongs/${id_ong}/campanhas/cadastrar`}
@@ -174,25 +245,24 @@ function DetalhesOng() {
             </div>
           </div>
 
-          {/* Dados de Contato e Documentos */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-6 border-t border-slate-100 text-xs">
             <div className="flex items-center gap-2.5 text-slate-600">
               <FileText className="w-4 h-4 text-blue-500 shrink-0" />
               <div>
                 <p className="text-slate-400 text-[10px] uppercase font-bold">
-                  CNPJ
+                  RCPJ
                 </p>
-                <p className="font-semibold text-slate-700">{ong?.cnpj}</p>
+                <p className="font-semibold text-slate-700">{ong?.RCPJ}</p>
               </div>
             </div>
             <div className="flex items-center gap-2.5 text-slate-600">
               <Mail className="w-4 h-4 text-blue-500 shrink-0" />
               <div>
                 <p className="text-slate-400 text-[10px] uppercase font-bold">
-                  E-mail
+                  CNAE
                 </p>
                 <p className="font-semibold text-slate-700">
-                  {ong?.email || "Não informado"}
+                  {ong?.CNAE || "Não informado"}
                 </p>
               </div>
             </div>
@@ -221,7 +291,7 @@ function DetalhesOng() {
           </div>
         </div>
 
-        {/* Cards de Métricas / Resumo */}
+        {/* Cards de Métricas */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
             <div className="flex items-center justify-between mb-2">
@@ -285,30 +355,84 @@ function DetalhesOng() {
           </div>
         </div>
 
-        {/* Seção 1: Galeria de Fotos */}
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <ImageIcon className="w-5 h-5 text-purple-600" />
-              Galeria de Fotos ({imagens.length})
-            </h2>
-            <Link
-              to={`/ongs/${id_ong}/imagens`}
-              className="text-xs font-semibold text-purple-600 hover:text-purple-700 hover:underline"
+        {/* Seção 1: Galeria de Fotos da ONG com Form de Upload via ImgBB */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <ImageIcon className="w-5 h-5 text-purple-600" />
+            Galeria de Fotos da ONG ({imagens.length})
+          </h2>
+
+          <form
+            onSubmit={handleCadastrarFoto}
+            className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100 space-y-3"
+          >
+            <p className="text-xs font-semibold text-purple-900 flex items-center gap-1.5">
+              <Plus className="w-4 h-4 text-purple-600" />
+              Adicionar nova foto à galeria da ONG (Upload ImgBB):
+            </p>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-purple-900 mb-1">
+                  Selecione a Imagem
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  disabled={uploading}
+                  className="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 file:cursor-pointer bg-white border border-slate-300 rounded-xl"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-purple-900 mb-1">
+                  Descrição
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Fachada da sede da ONG"
+                  value={novaImagem.descricao}
+                  onChange={(e) =>
+                    setNovaImagem({ ...novaImagem, descricao: e.target.value })
+                  }
+                  required
+                  className="w-full px-3 py-1.5 rounded-xl border border-slate-300 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                />
+              </div>
+            </div>
+
+            {uploading && (
+              <div className="flex items-center gap-2 text-xs text-purple-700 font-medium pt-1">
+                <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                <span>Enviando imagem...</span>
+              </div>
+            )}
+
+            {novaImagem.url && !uploading && (
+              <div className="flex items-center gap-2 text-xs text-emerald-700 font-medium bg-emerald-50 p-2 rounded-xl border border-emerald-200">
+                <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="truncate">Imagem pronta!</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={uploading || !novaImagem.url}
+              className="px-4 py-2 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
             >
-              Gerenciar fotos &rarr;
-            </Link>
-          </div>
+              <Upload className="w-3.5 h-3.5" />
+              <span>Salvar na Galeria</span>
+            </button>
+          </form>
 
           {imagens.length === 0 ? (
             <div className="p-8 text-center border-2 border-dashed border-slate-100 rounded-2xl">
               <p className="text-xs text-slate-400">
-                Nenhuma foto adicionada ainda.
+                Nenhuma foto adicionada à galeria ainda.
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {imagens.slice(0, 4).map((img) => (
+              {imagens.map((img) => (
                 <div
                   key={img.id_img}
                   className="group relative h-36 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200"
@@ -322,10 +446,17 @@ function DetalhesOng() {
                         "https://via.placeholder.com/300x200?text=Foto";
                     }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex items-end">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex items-end justify-between">
                     <p className="text-[11px] text-white font-medium line-clamp-1">
                       {img.descricao}
                     </p>
+                    <button
+                      onClick={() => handleDeleteFoto(img.id_img)}
+                      className="p-1 text-white bg-red-600 hover:bg-red-700 rounded-lg shrink-0 cursor-pointer"
+                      title="Excluir foto"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -390,7 +521,6 @@ function DetalhesOng() {
                         {c.descricao}
                       </p>
 
-                      {/* Barra de Progresso da Meta */}
                       {meta > 0 && (
                         <div className="space-y-1.5 mb-4">
                           <div className="flex justify-between text-xs font-semibold text-slate-700">
@@ -406,7 +536,6 @@ function DetalhesOng() {
                         </div>
                       )}
 
-                      {/* Valores e Datas */}
                       <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 pt-2 border-t border-slate-200/60 mb-4">
                         <div>
                           <p className="text-[10px] uppercase text-slate-400">
@@ -433,20 +562,17 @@ function DetalhesOng() {
                       </div>
                     </div>
 
-                    {/* Ações da Campanha */}
-                    {/* Ações da Campanha em detalhesOng.jsx */}
                     <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200/60">
                       <Link
                         to={`/campanhas/${c.id_campanha}`}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold textemerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         <span>Ver Detalhes</span>
                       </Link>
                       <Link
                         to={`/campanhas/editar/${c.id_campanha}`}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-600
-hover:bg-blue-50 rounded-lg transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                         <span>Editar</span>
@@ -455,8 +581,7 @@ hover:bg-blue-50 rounded-lg transition-colors"
                         onClick={() =>
                           handleDeleteCampanha(c.id_campanha, c.titulo)
                         }
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-red-600
-hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>Excluir</span>

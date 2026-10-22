@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import Header from "../components/header";
 import { ChevronLeft, ChevronRight, Heart, ArrowRight } from "lucide-react";
 import Footer from "../components/footer";
@@ -31,6 +32,9 @@ function Home() {
   // Estado do Carrossel
   const [currentSlide, setCurrentSlide] = useState(0);
 
+  const [ongsDestaque, setOngsDestaque] = useState([]);
+  const [loadingOngs, setLoadingOngs] = useState(true);
+
   const prevSlide = () => {
     setCurrentSlide((prev) =>
       prev === 0 ? carouselSlides.length - 1 : prev - 1,
@@ -50,6 +54,52 @@ function Home() {
     }, 5000);
     return () => clearInterval(timer);
   }, [currentSlide]);
+
+  // Carrega as 3 últimas ONGs e suas respectivas imagens do backend
+  useEffect(() => {
+    const carregarOngsDestaque = async () => {
+      try {
+        setLoadingOngs(true);
+        const res = await fetch("http://127.0.0.1:8000/ongs");
+        if (res.ok) {
+          const data = await res.json();
+          // Ordena decrescente pelo id_ong e pega as 3 últimas cadastradas
+          const ultimasOngs = [...data]
+            .sort((a, b) => b.id_ong - a.id_ong)
+            .slice(0, 3);
+
+          // Busca a imagem principal de cada ONG em paralelo
+          const ongsComImagem = await Promise.all(
+            ultimasOngs.map(async (ong) => {
+              try {
+                const resImg = await fetch(
+                  `http://127.0.0.1:8000/imagens/ong/${ong.id_ong}`,
+                );
+                if (resImg.ok) {
+                  const imgs = await resImg.json();
+                  return {
+                    ...ong,
+                    imagemUrl: imgs.length > 0 ? imgs[0].url : null,
+                  };
+                }
+              } catch (err) {
+                console.error("Erro ao buscar imagem da ONG:", err);
+              }
+              return { ...ong, imagemUrl: null };
+            }),
+          );
+
+          setOngsDestaque(ongsComImagem);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar ONGs em destaque:", error);
+      } finally {
+        setLoadingOngs(false);
+      }
+    };
+
+    carregarOngsDestaque();
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -79,10 +129,13 @@ function Home() {
                   {slide.subtitle}
                 </p>
                 <div className="flex flex-wrap gap-4 justify-center">
-                  <button className="flex items-center gap-2 px-6 py-3 font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-lg transition-all active:scale-95 cursor-pointer">
+                  <Link
+                    to="/ongs"
+                    className="flex items-center gap-2 px-6 py-3 font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-lg transition-all active:scale-95 cursor-pointer"
+                  >
                     <span>Conhecer ONGs</span>
                     <ArrowRight className="w-5 h-5" />
-                  </button>
+                  </Link>
                   <button className="flex items-center gap-2 px-6 py-3 font-semibold text-slate-200 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 rounded-xl transition-all cursor-pointer">
                     <Heart className="w-5 h-5 text-rose-500 fill-rose-500/20" />
                     <span>Fazer Doação</span>
@@ -92,7 +145,7 @@ function Home() {
             </div>
           ))}
 
-          {/* Botões do Carrossel (Anterior / Próximo) */}
+          {/* Botões do Carrossel */}
           <button
             onClick={prevSlide}
             aria-label="Slide anterior"
@@ -108,7 +161,7 @@ function Home() {
             <ChevronRight className="w-6 h-6" />
           </button>
 
-          {/* Indicadores (Dots) */}
+          {/* Indicadores */}
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
             {carouselSlides.map((_, index) => (
               <button
@@ -126,6 +179,7 @@ function Home() {
         </div>
       </section>
 
+      {/* SEÇÃO SOBRE ONGS */}
       <section className="py-16 bg-blue-900 text-white mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
@@ -153,97 +207,76 @@ function Home() {
         </div>
       </section>
 
-      {/* SEÇÃO GRID DE CARDS COM IMAGENS E LOREM IPSUM */}
+      {/* SEÇÃO DINÂMICA: PROJETOS E ONGS EM DESTAQUE */}
       <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <h2 className="text-3xl font-bold text-slate-900 mb-3">
             Projetos e ONGs em Destaque
           </h2>
           <p className="text-slate-600">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            Conheça as últimas organizações sociais cadastradas e faça a
+            diferença apoiando suas causas!
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {/* Card 1 */}
-          <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden hover:shadow-md transition-shadow group">
-            <div className="h-48 overflow-hidden relative">
-              <img
-                src="#"
-                alt="ONG1"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-            <div className="p-6">
-              <h3 className="font-bold text-lg text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">
-                Lorem Ipsum Dolor Sit Amet
-              </h3>
-              <p className="text-sm text-slate-600 mb-4 line-clamp-3">
-                Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut
-                labore et dolore magna aliqua. Ut enim ad minim veniam.
-              </p>
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs text-slate-500">
-                <span className="font-medium text-blue-600">
-                  Saiba mais &rarr;
-                </span>
-              </div>
-            </div>
-          </div>
+        {loadingOngs ? (
+          <p className="text-center text-slate-500 py-8 font-medium">
+            Carregando ONGs em destaque...
+          </p>
+        ) : ongsDestaque.length === 0 ? (
+          <p className="text-center text-slate-500 py-8 font-medium">
+            Nenhuma ONG cadastrada até o momento.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {ongsDestaque.map((ong) => (
+              <div
+                key={ong.id_ong}
+                className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden hover:shadow-md transition-shadow group flex flex-col justify-between"
+              >
+                <div>
+                  <div className="h-48 overflow-hidden relative bg-slate-100">
+                    <img
+                      src={
+                        ong.imagemUrl ||
+                        "https://images.unsplash.com/photo-1532629345422-7515f3d16bb0?w=600&auto=format&fit=crop"
+                      }
+                      alt={ong.nome}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        e.target.src =
+                          "https://images.unsplash.com/photo-1532629345422-7515f3d16bb0?w=600&auto=format&fit=crop";
+                      }}
+                    />
+                  </div>
+                  <div className="p-6">
+                    <h3 className="font-bold text-lg text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">
+                      {ong.nome}
+                    </h3>
+                    <p className="text-sm text-slate-600 mb-4 line-clamp-3 leading-relaxed">
+                      {ong.objetivo_social_finalidade ||
+                        "Sem descrição disponível."}
+                    </p>
+                  </div>
+                </div>
 
-          {/* Card 2 */}
-          <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden hover:shadow-md transition-shadow group">
-            <div className="h-48 overflow-hidden relative">
-              <img
-                src="#"
-                alt="ONG2"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-            <div className="p-6">
-              <h3 className="font-bold text-lg text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">
-                Sed Do Eiusmod Tempor
-              </h3>
-              <p className="text-sm text-slate-600 mb-4 line-clamp-3">
-                Duis aute irure dolor in reprehenderit in voluptate velit esse
-                cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat.
-              </p>
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs text-slate-500">
-                <span className="font-medium text-blue-600">
-                  Saiba mais &rarr;
-                </span>
+                <div className="px-6 pb-6 pt-0">
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs text-slate-500">
+                    <Link
+                      to={`/ongs/${ong.id_ong}`}
+                      className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                    >
+                      Saiba mais &rarr;
+                    </Link>
+                  </div>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
-
-          {/* Card 3 */}
-          <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden hover:shadow-md transition-shadow group">
-            <div className="h-48 overflow-hidden relative">
-              <img
-                src="#"
-                alt="ONG3"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-            <div className="p-6">
-              <h3 className="font-bold text-lg text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">
-                Ut Enim Ad Minim Veniam
-              </h3>
-              <p className="text-sm text-slate-600 mb-4 line-clamp-3">
-                Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit
-                aut fugit, sed quia consequuntur magni dolores eos qui.
-              </p>
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs text-slate-500">
-                <span className="font-medium text-blue-600">
-                  Saiba mais &rarr;
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </section>
 
-      {/* SEÇÃO INFORMATIVA COM TEXTO E IMAGEM */}
+      {/* SEÇÃO INFORMATIVA COMO FUNCIONA */}
       <section className="py-16 bg-blue-900 text-white mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
@@ -261,9 +294,12 @@ function Home() {
               vestibulum leo.
             </p>
             <div className="flex gap-4">
-              <button className="px-5 py-2.5 bg-white text-blue-900 font-semibold rounded-xl hover:bg-blue-50 transition-colors cursor-pointer">
+              <Link
+                to="/cadastrar-ong"
+                className="px-5 py-2.5 bg-white text-blue-900 font-semibold rounded-xl hover:bg-blue-50 transition-colors cursor-pointer"
+              >
                 Cadastrar Minha ONG
-              </button>
+              </Link>
             </div>
           </div>
           <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-blue-700/50">

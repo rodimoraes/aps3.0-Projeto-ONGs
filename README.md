@@ -77,7 +77,7 @@ id_campanha INT,
 descricao VARCHAR(150) NOT NULL,
 url VARCHAR(150) NOT NULL,
 unique(url),
-FOREIGN KEY (id_ong) REFERENCES ong(id_ong) ON DELETE CASCADE
+FOREIGN KEY (id_ong) REFERENCES ong(id_ong) ON DELETE CASCADE,
 FOREIGN KEY (id_campanha) REFERENCES campanha(id_campanha) ON DELETE CASCADE
 );
 

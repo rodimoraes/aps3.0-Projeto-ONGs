@@ -4,16 +4,15 @@ import {
   ArrowLeft,
   Pencil,
   Trash2,
-  Calendar,
-  DollarSign,
   Building2,
   Image as ImageIcon,
   Plus,
-  Link as LinkIcon,
-  Megaphone,
+  Upload,
+  Loader2,
   CheckCircle,
   TrendingUp,
 } from "lucide-react";
+import { uploadImageToImgBB } from "../../services/imgbb.js";
 
 function DetalhesCampanha() {
   const { id_campanha } = useParams();
@@ -23,20 +22,20 @@ function DetalhesCampanha() {
   const [imagens, setImagens] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Estado para adicionar nova imagem na campanha
+  // Estados para upload de imagem no ImgBB
+  const [uploading, setUploading] = useState(false);
   const [novaImagem, setNovaImagem] = useState({
     url: "",
     descricao: "",
   });
 
-  // Carrega os dados da campanha, da ONG dona e das imagens da campanha
+  // Carrega os dados da campanha, da ONG dona e das imagens
   useEffect(() => {
     const carregarDados = async () => {
       try {
         setLoading(true);
-        // 1. Busca dados da campanha
         const resCampanha = await fetch(
-          `http://127.0.0.1:8000/campanhas/${id_campanha}`
+          `http://127.0.0.1:8000/campanhas/${id_campanha}`,
         );
         if (!resCampanha.ok) {
           alert("Campanha não encontrada!");
@@ -46,7 +45,6 @@ function DetalhesCampanha() {
         const dataCampanha = await resCampanha.json();
         setCampanha(dataCampanha);
 
-        // 2. Busca dados da ONG e das imagens em paralelo
         const [resOng, resImagens] = await Promise.all([
           fetch(`http://127.0.0.1:8000/ongs/${dataCampanha.id_ong}`),
           fetch(`http://127.0.0.1:8000/imagens/campanha/${id_campanha}`),
@@ -70,11 +68,31 @@ function DetalhesCampanha() {
     carregarDados();
   }, [id_campanha, navigate]);
 
-  // Cadastra nova foto associada a esta campanha
+  // Handler para upload de arquivo no ImgBB
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const urlEnvio = await uploadImageToImgBB(file);
+      setNovaImagem((prev) => ({ ...prev, url: urlEnvio }));
+    } catch (error) {
+      alert(`Erro no upload da imagem: ${error.message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Cadastra nova foto associada a esta campanha no Banco de Dados
   const handleCadastrarFoto = async (e) => {
     e.preventDefault();
-    if (!novaImagem.url || !novaImagem.descricao) {
-      alert("Por favor, preencha a URL e a descrição da foto.");
+    if (!novaImagem.url) {
+      alert("Por favor, faça o upload de uma imagem primeiro.");
+      return;
+    }
+    if (!novaImagem.descricao) {
+      alert("Por favor, informe uma descrição para a foto.");
       return;
     }
     try {
@@ -90,9 +108,8 @@ function DetalhesCampanha() {
       });
       if (response.ok) {
         alert("Imagem da campanha adicionada!");
-        // Recarrega as imagens da campanha
         const res = await fetch(
-          `http://127.0.0.1:8000/imagens/campanha/${id_campanha}`
+          `http://127.0.0.1:8000/imagens/campanha/${id_campanha}`,
         );
         if (res.ok) {
           const data = await res.json();
@@ -133,14 +150,17 @@ function DetalhesCampanha() {
   const handleDeleteCampanha = async () => {
     if (
       !window.confirm(
-        `Deseja realmente excluir a campanha "${campanha?.titulo}"?`
+        `Deseja realmente excluir a campanha "${campanha?.titulo}"?`,
       )
     )
       return;
     try {
-      const res = await fetch(`http://127.0.0.1:8000/campanhas/${id_campanha}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `http://127.0.0.1:8000/campanhas/${id_campanha}`,
+        {
+          method: "DELETE",
+        },
+      );
       if (res.ok) {
         alert("Campanha excluída!");
         navigate(`/ongs/${campanha.id_ong}`);
@@ -223,7 +243,7 @@ function DetalhesCampanha() {
             {campanha?.descricao}
           </p>
 
-          {/* Card de Progresso e Métricas Financeiras */}
+          {/* Card de Progresso */}
           <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between text-sm font-bold text-slate-800">
               <span className="flex items-center gap-2">
@@ -233,7 +253,6 @@ function DetalhesCampanha() {
               <span className="text-emerald-700">{percentual}% Atingido</span>
             </div>
 
-            {/* Barra Visual de Progresso */}
             <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
               <div
                 className="bg-emerald-500 h-3 rounded-full transition-all duration-700"
@@ -246,7 +265,8 @@ function DetalhesCampanha() {
                   Meta Final
                 </p>
                 <p className="text-lg font-black text-slate-800">
-                  R$ {meta.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  R${" "}
+                  {meta.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </p>
               </div>
               <div>
@@ -254,7 +274,8 @@ function DetalhesCampanha() {
                   Arrecadado
                 </p>
                 <p className="text-lg font-black text-emerald-600">
-                  R$ {arrecadado.toLocaleString("pt-BR", {
+                  R${" "}
+                  {arrecadado.toLocaleString("pt-BR", {
                     minimumFractionDigits: 2,
                   })}
                 </p>
@@ -267,7 +288,7 @@ function DetalhesCampanha() {
                   {new Date(campanha?.data_inicio).toLocaleDateString("pt-BR")}
                   {campanha?.data_fim &&
                     ` até ${new Date(campanha?.data_fim).toLocaleDateString(
-                      "pt-BR"
+                      "pt-BR",
                     )}`}
                 </p>
               </div>
@@ -275,52 +296,75 @@ function DetalhesCampanha() {
           </div>
         </div>
 
-        {/* Seção de Fotos da Campanha */}
+        {/* Seção de Fotos da Campanha com Upload ImgBB */}
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
           <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
             <ImageIcon className="w-5 h-5 text-purple-600" />
             Fotos da Campanha ({imagens.length})
           </h2>
 
-          {/* Formulário de Envio de Foto na própria tela da Campanha */}
           <form
             onSubmit={handleCadastrarFoto}
             className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100 space-y-3"
           >
             <p className="text-xs font-semibold text-purple-900 flex items-center gap-1.5">
               <Plus className="w-4 h-4 text-purple-600" />
-              Adicionar foto a esta campanha:
+              Adicionar foto (Upload via ImgBB):
             </p>
+
             <div className="grid sm:grid-cols-2 gap-3">
-              <div className="relative">
+              <div>
+                <label className="block text-[11px] font-semibold text-purple-900 mb-1">
+                  Selecione uma imagem
+                </label>
                 <input
-                  type="url"
-                  placeholder="URL da imagem (ex: https://...)"
-                  value={novaImagem.url}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  disabled={uploading}
+                  className="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700 file:cursor-pointer bg-white border border-slate-300 rounded-xl"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-purple-900 mb-1">
+                  Descrição da Foto
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Entrega de cestas básicas"
+                  value={novaImagem.descricao}
                   onChange={(e) =>
-                    setNovaImagem({ ...novaImagem, url: e.target.value })
+                    setNovaImagem({ ...novaImagem, descricao: e.target.value })
                   }
                   required
-                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                  className="w-full px-3 py-1.5 rounded-xl border border-slate-300 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/30"
                 />
-                <LinkIcon className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
               </div>
-              <input
-                type="text"
-                placeholder="Descrição (ex: Entrega de cestas básicas)"
-                value={novaImagem.descricao}
-                onChange={(e) =>
-                  setNovaImagem({ ...novaImagem, descricao: e.target.value })
-                }
-                required
-                className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-              />
             </div>
+
+            {/* Status do Upload */}
+            {uploading && (
+              <div className="flex items-center gap-2 text-xs text-purple-700 font-medium pt-1">
+                <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+                <span>Enviando imagem...</span>
+              </div>
+            )}
+
+            {novaImagem.url && !uploading && (
+              <div className="flex items-center gap-2 text-xs text-emerald-700 font-medium bg-emerald-50 p-2 rounded-xl border border-emerald-200">
+                <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="truncate">Imagem pronta!</span>
+              </div>
+            )}
+
             <button
               type="submit"
-              className="px-4 py-2 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-all cursor-pointer"
+              disabled={uploading || !novaImagem.url}
+              className="px-4 py-2 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
             >
-              Anexar Foto
+              <Upload className="w-3.5 h-3.5" />
+              <span>Anexar Foto</span>
             </button>
           </form>
 
@@ -347,7 +391,6 @@ function DetalhesCampanha() {
                         "https://via.placeholder.com/300x200?text=Foto";
                     }}
                   />
-                  {/* Overlay ao passar o mouse */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex items-end justify-between gap-2">
                     <p className="text-[11px] text-white font-medium line-clamp-2">
                       {img.descricao}
