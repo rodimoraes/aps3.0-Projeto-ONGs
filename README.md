@@ -70,6 +70,17 @@ status VARCHAR(50) DEFAULT 'ativa',
 FOREIGN KEY (id_ong) REFERENCES ong(id_ong) ON DELETE CASCADE
 );
 
+CREATE TABLE imagem (
+id_img INT AUTO_INCREMENT PRIMARY KEY,
+id_ong INT,
+id_campanha INT,
+descricao VARCHAR(150) NOT NULL,
+url VARCHAR(150) NOT NULL,
+unique(url),
+FOREIGN KEY (id_ong) REFERENCES ong(id_ong) ON DELETE CASCADE
+FOREIGN KEY (id_campanha) REFERENCES campanha(id_campanha) ON DELETE CASCADE
+);
+
 CREATE TABLE categoria
 (
 id_categoria INT PRIMARY KEY AUTO_INCREMENT,  

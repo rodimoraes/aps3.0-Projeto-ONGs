@@ -152,7 +152,7 @@ def deletar_ong(id_ong: int):
         conexao.close()
 
         if linhas_afetadas == 0:
-            raise HTTPException(status_code=404, detail="ONG não encontrada no banco dedados.")
+            raise HTTPException(status_code=404, detail="ONG não encontrada no banco de dados.")
 
         return {"status": "sucesso", "mensagem": "ONG removida com sucesso!"}
 

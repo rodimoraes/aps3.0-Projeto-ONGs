@@ -8,6 +8,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from usuario import router as usuario_router
 from ong import router as ong_router
 from campanha import router as campanha_router
+from imagem import router as imagem_router
+
+
 app = FastAPI(title="EncontreONG API")
 app.add_middleware(
  CORSMiddleware,
@@ -19,6 +22,7 @@ app.add_middleware(
 app.include_router(usuario_router)
 app.include_router(ong_router)
 app.include_router(campanha_router)
+app.include_router(imagem_router)
 
 @app.get("/")
 def root():

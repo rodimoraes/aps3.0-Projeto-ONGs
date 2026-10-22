@@ -7,6 +7,8 @@ import {
   Building2,
   Pencil,
   Megaphone,
+  Image,
+  Eye,
 } from "lucide-react";
 import Header from "../components/header";
 
@@ -146,49 +148,46 @@ bg-blue-50 rounded-full shrink-0"
                     </p>
                   </div>
                   {/* Ações (Editar e Deletar) */}
-                  <div className="pt-3 border-t border-slate-100 flex items-center justifyend gap-2">
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2 flexwrap">
+                    {/* NOVO BOTÃO DE DETALHES DA ONG */}
+                    <Link
+                      to={`/ongs/${ong.id_ong}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold textblue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                      title="Ver Detalhes da ONG"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span>Ver Detalhes</span>
+                    </Link>
+                    <Link
+                      to={`/ongs/${ong.id_ong}/campanhas`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium textemerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
+                      title="Gerenciar Campanhas"
+                    >
+                      <Megaphone className="w-4 h-4" />
+                      <span>Campanhas</span>
+                    </Link>
+                    <Link
+                      to={`/ongs/${ong.id_ong}/imagens`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium textpurple-700 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+                      title="Galeria de Fotos"
+                    >
+                      <Image className="w-4 h-4" />
+                      <span>Fotos</span>
+                    </Link>
                     <Link
                       to={`/editar-ong/${ong.id_ong}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs fontmedium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Editar ONG"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate600 hover:bg-slate-100 rounded-lg transition-colors"
                     >
                       <Pencil className="w-4 h-4" />
                       <span>Editar</span>
                     </Link>
                     <button
                       onClick={() => handleDelete(ong.id_ong, ong.nome)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs fontmedium text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                      title="Excluir ONG"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                       <span>Excluir</span>
                     </button>
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2 flexwrap">
-                      <Link
-                        to={`/ongs/${ong.id_ong}/campanhas`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium textemerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
-                        title="Gerenciar Campanhas da ONG"
-                      >
-                        <Megaphone className="w-4 h-4" />
-                        <span>Campanhas</span>
-                      </Link>
-                      <Link
-                        to={`/editar-ong/${ong.id_ong}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Editar ONG"
-                      >
-                        <Pencil className="w-4 h-4" />
-                        <span>Editar</span>
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(ong.id_ong, ong.nome)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                        title="Excluir ONG"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Excluir</span>
-                      </button>
-                    </div>
                   </div>
                 </div>
               ))}

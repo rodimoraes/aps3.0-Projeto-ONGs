@@ -10,9 +10,13 @@ import CadastrarUsuario from "./pages/usuario/cadastrarUsuario";
 import ListarUsuarios from "./pages/usuario/ListarUsuarios";
 import EditarUsuario from "./pages/usuario/editarUsuario";
 
+import DetalhesOng from "./pages/detalhesOng";
+
 import CadastrarOng from "./pages/cadastrarOng";
 import ListarOngs from "./pages/ListarOngs";
 import EditarOng from "./pages/editarOng";
+
+import GerenciarImagens from "./pages/gerenciarImagens";
 
 import ListarCampanhas from "./pages/listarCampanhas";
 import CadastrarCampanha from "./pages/cadastrarCampanha";
@@ -27,6 +31,7 @@ createRoot(document.getElementById("root")).render(
         <Route path="/cadastrar-ong" element={<CadastrarOng />} />
         <Route path="/ongs" element={<ListarOngs />} />
         <Route path="/editar-ong/:id" element={<EditarOng />} />
+        <Route path="/ongs/:id_ong" element={<DetalhesOng />} />
 
         <Route path="/cadastrar-usuario" element={<CadastrarUsuario />} />
         <Route path="/usuarios" element={<ListarUsuarios />} />
@@ -41,6 +46,7 @@ createRoot(document.getElementById("root")).render(
           path="/campanhas/editar/:id_campanha"
           element={<CadastrarCampanha />}
         />
+        <Route path="/ongs/:id_ong/imagens" element={<GerenciarImagens />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
