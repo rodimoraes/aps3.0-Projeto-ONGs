@@ -10,17 +10,16 @@ import CadastrarUsuario from "./pages/usuario/cadastrarUsuario";
 import ListarUsuarios from "./pages/usuario/ListarUsuarios";
 import EditarUsuario from "./pages/usuario/editarUsuario";
 
-import DetalhesOng from "./pages/detalhesOng";
-
-import CadastrarOng from "./pages/cadastrarOng";
-import ListarOngs from "./pages/ListarOngs";
-import EditarOng from "./pages/editarOng";
+import DetalhesOng from "./pages/ongs/detalhesOng";
+import CadastrarOng from "./pages/ongs/cadastrarOng";
+import ListarOngs from "./pages/ongs/ListarOngs";
+import EditarOng from "./pages/ongs/editarOng";
 
 import GerenciarImagens from "./pages/gerenciarImagens";
 
-import DetalhesCampanha from "./pages/detalhesCampanha";
-import ListarCampanhas from "./pages/listarCampanhas";
-import CadastrarCampanha from "./pages/cadastrarCampanha";
+import DetalhesCampanha from "./pages/campanhas/detalhesCampanha";
+import ListarCampanhas from "./pages/campanhas/listarCampanhas";
+import CadastrarCampanha from "./pages/campanhas/cadastrarCampanha";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

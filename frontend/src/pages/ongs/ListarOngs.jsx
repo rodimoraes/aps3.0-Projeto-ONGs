@@ -10,7 +10,7 @@ import {
   Image,
   Eye,
 } from "lucide-react";
-import Header from "../components/header";
+import Header from "../../components/header";
 
 function ListarOngs() {
   const [ongs, setOngs] = useState([]);

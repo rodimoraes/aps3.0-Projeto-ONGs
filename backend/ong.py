@@ -16,10 +16,10 @@ router = APIRouter(
 
 def get_db_connection():
     return mysql.connector.connect(
-        host=os.getenv('DB_HOST','localhost'),
-        user=os.getenv('DB_USER','root'),
-        password=os.getenv('DB_PASSWORD','123456'),
-        database=os.getenv('DB_NAME','bd_encontreong')
+        host=os.getenv("DB_HOST"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME"),
     )
 
 # Modelo atualizado com str para telefone e RCPJ
