@@ -8,6 +8,7 @@ import {
   Pencil,
   Calendar,
   DollarSign,
+  Eye
 } from "lucide-react";
 function ListarCampanhas() {
   const { id_ong } = useParams(); // Pega o ID da ONG vindo da URL
@@ -186,6 +187,14 @@ ${
                 </div>
                 {/* Ações */}
                 <div className="pt-3 border-t border-slate-100 flex items-center justifyend gap-2">
+                  <Link
+                    to={`/campanhas/${c.id_campanha}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold textemerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>Ver Detalhes</span>
+                  </Link>
+
                   <Link
                     to={`/campanhas/editar/${c.id_campanha}`}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs fontmedium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"

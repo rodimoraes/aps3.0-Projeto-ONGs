@@ -16,6 +16,7 @@ import {
   Trash2,
   CheckCircle,
   FileText,
+  Eye
 } from "lucide-react";
 
 function DetalhesOng() {
@@ -68,16 +69,22 @@ function DetalhesOng() {
 
   // Função para excluir uma campanha diretamente do painel
   const handleDeleteCampanha = async (id_campanha, titulo) => {
-    if (!window.confirm(`Deseja realmente excluir a campanha "${titulo}"?`)) return;
+    if (!window.confirm(`Deseja realmente excluir a campanha "${titulo}"?`))
+      return;
 
     try {
-      const res = await fetch(`http://127.0.0.1:8000/campanhas/${id_campanha}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `http://127.0.0.1:8000/campanhas/${id_campanha}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (res.ok) {
         alert("Campanha excluída!");
-        setCampanhas((prev) => prev.filter((c) => c.id_campanha !== id_campanha));
+        setCampanhas((prev) =>
+          prev.filter((c) => c.id_campanha !== id_campanha),
+        );
       } else {
         alert("Erro ao excluir campanha.");
       }
@@ -90,7 +97,9 @@ function DetalhesOng() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <p className="text-slate-500 font-medium">Carregando painel da ONG...</p>
+        <p className="text-slate-500 font-medium">
+          Carregando painel da ONG...
+        </p>
       </div>
     );
   }
@@ -98,7 +107,7 @@ function DetalhesOng() {
   // Cálculos para os cards de métricas
   const totalArrecadado = campanhas.reduce(
     (acc, c) => acc + Number(c.valor_arrecadado || 0),
-    0
+    0,
   );
   const campanhasAtivas = campanhas.filter((c) => c.status === "ativa").length;
 
@@ -158,7 +167,8 @@ function DetalhesOng() {
                   </span>
                 </div>
                 <p className="text-sm text-slate-600 mt-2 max-w-2xl leading-relaxed">
-                  {ong?.objetivo_social_finalidade || "Sem objetivo cadastrado."}
+                  {ong?.objetivo_social_finalidade ||
+                    "Sem objetivo cadastrado."}
                 </p>
               </div>
             </div>
@@ -169,14 +179,18 @@ function DetalhesOng() {
             <div className="flex items-center gap-2.5 text-slate-600">
               <FileText className="w-4 h-4 text-blue-500 shrink-0" />
               <div>
-                <p className="text-slate-400 text-[10px] uppercase font-bold">CNPJ</p>
+                <p className="text-slate-400 text-[10px] uppercase font-bold">
+                  CNPJ
+                </p>
                 <p className="font-semibold text-slate-700">{ong?.cnpj}</p>
               </div>
             </div>
             <div className="flex items-center gap-2.5 text-slate-600">
               <Mail className="w-4 h-4 text-blue-500 shrink-0" />
               <div>
-                <p className="text-slate-400 text-[10px] uppercase font-bold">E-mail</p>
+                <p className="text-slate-400 text-[10px] uppercase font-bold">
+                  E-mail
+                </p>
                 <p className="font-semibold text-slate-700">
                   {ong?.email || "Não informado"}
                 </p>
@@ -185,7 +199,9 @@ function DetalhesOng() {
             <div className="flex items-center gap-2.5 text-slate-600">
               <Phone className="w-4 h-4 text-blue-500 shrink-0" />
               <div>
-                <p className="text-slate-400 text-[10px] uppercase font-bold">Telefone</p>
+                <p className="text-slate-400 text-[10px] uppercase font-bold">
+                  Telefone
+                </p>
                 <p className="font-semibold text-slate-700">
                   {ong?.telefone || "Não informado"}
                 </p>
@@ -194,7 +210,9 @@ function DetalhesOng() {
             <div className="flex items-center gap-2.5 text-slate-600">
               <MapPin className="w-4 h-4 text-blue-500 shrink-0" />
               <div>
-                <p className="text-slate-400 text-[10px] uppercase font-bold">Endereço</p>
+                <p className="text-slate-400 text-[10px] uppercase font-bold">
+                  Endereço
+                </p>
                 <p className="font-semibold text-slate-700 line-clamp-1">
                   {ong?.endereco || "Não informado"}
                 </p>
@@ -212,7 +230,9 @@ function DetalhesOng() {
               </span>
               <Megaphone className="w-4 h-4 text-emerald-500" />
             </div>
-            <p className="text-2xl font-black text-slate-800">{campanhas.length}</p>
+            <p className="text-2xl font-black text-slate-800">
+              {campanhas.length}
+            </p>
             <p className="text-[11px] text-slate-500 mt-1">
               {campanhasAtivas} em andamento
             </p>
@@ -226,9 +246,14 @@ function DetalhesOng() {
               <TrendingUp className="w-4 h-4 text-blue-500" />
             </div>
             <p className="text-xl sm:text-2xl font-black text-slate-800">
-              R$ {totalArrecadado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              R${" "}
+              {totalArrecadado.toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+              })}
             </p>
-            <p className="text-[11px] text-slate-500 mt-1">Soma de todas as campanhas</p>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Soma de todas as campanhas
+            </p>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
@@ -238,7 +263,9 @@ function DetalhesOng() {
               </span>
               <ImageIcon className="w-4 h-4 text-purple-500" />
             </div>
-            <p className="text-2xl font-black text-slate-800">{imagens.length}</p>
+            <p className="text-2xl font-black text-slate-800">
+              {imagens.length}
+            </p>
             <p className="text-[11px] text-slate-500 mt-1">Fotos vinculadas</p>
           </div>
 
@@ -252,7 +279,9 @@ function DetalhesOng() {
             <p className="text-base font-bold text-slate-800 truncate">
               {ong?.inscricao_municipal || "Isento"}
             </p>
-            <p className="text-[11px] text-slate-500 mt-1">Cadastro de Tributos</p>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Cadastro de Tributos
+            </p>
           </div>
         </div>
 
@@ -273,7 +302,9 @@ function DetalhesOng() {
 
           {imagens.length === 0 ? (
             <div className="p-8 text-center border-2 border-dashed border-slate-100 rounded-2xl">
-              <p className="text-xs text-slate-400">Nenhuma foto adicionada ainda.</p>
+              <p className="text-xs text-slate-400">
+                Nenhuma foto adicionada ainda.
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -287,7 +318,8 @@ function DetalhesOng() {
                     alt={img.descricao}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => {
-                      e.target.src = "https://via.placeholder.com/300x200?text=Foto";
+                      e.target.src =
+                        "https://via.placeholder.com/300x200?text=Foto";
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex items-end">
@@ -329,7 +361,9 @@ function DetalhesOng() {
                 const meta = Number(c.meta_arrecadacao || 0);
                 const arrecadado = Number(c.valor_arrecadado || 0);
                 const percentual =
-                  meta > 0 ? Math.min(100, Math.round((arrecadado / meta) * 100)) : 0;
+                  meta > 0
+                    ? Math.min(100, Math.round((arrecadado / meta) * 100))
+                    : 0;
 
                 return (
                   <div
@@ -375,9 +409,14 @@ function DetalhesOng() {
                       {/* Valores e Datas */}
                       <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 pt-2 border-t border-slate-200/60 mb-4">
                         <div>
-                          <p className="text-[10px] uppercase text-slate-400">Meta</p>
+                          <p className="text-[10px] uppercase text-slate-400">
+                            Meta
+                          </p>
                           <p className="font-bold text-slate-700">
-                            R$ {meta.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                            R${" "}
+                            {meta.toLocaleString("pt-BR", {
+                              minimumFractionDigits: 2,
+                            })}
                           </p>
                         </div>
                         <div>
@@ -385,24 +424,39 @@ function DetalhesOng() {
                             Arrecadado
                           </p>
                           <p className="font-bold text-emerald-600">
-                            R$ {arrecadado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                            R${" "}
+                            {arrecadado.toLocaleString("pt-BR", {
+                              minimumFractionDigits: 2,
+                            })}
                           </p>
                         </div>
                       </div>
                     </div>
 
                     {/* Ações da Campanha */}
+                    {/* Ações da Campanha em detalhesOng.jsx */}
                     <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200/60">
                       <Link
+                        to={`/campanhas/${c.id_campanha}`}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold textemerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Ver Detalhes</span>
+                      </Link>
+                      <Link
                         to={`/campanhas/editar/${c.id_campanha}`}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-600
+hover:bg-blue-50 rounded-lg transition-colors"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                         <span>Editar</span>
                       </Link>
                       <button
-                        onClick={() => handleDeleteCampanha(c.id_campanha, c.titulo)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                        onClick={() =>
+                          handleDeleteCampanha(c.id_campanha, c.titulo)
+                        }
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-red-600
+hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>Excluir</span>

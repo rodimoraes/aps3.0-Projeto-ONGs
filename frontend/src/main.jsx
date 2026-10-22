@@ -18,6 +18,7 @@ import EditarOng from "./pages/editarOng";
 
 import GerenciarImagens from "./pages/gerenciarImagens";
 
+import DetalhesCampanha from "./pages/detalhesCampanha";
 import ListarCampanhas from "./pages/listarCampanhas";
 import CadastrarCampanha from "./pages/cadastrarCampanha";
 
@@ -46,6 +47,7 @@ createRoot(document.getElementById("root")).render(
           path="/campanhas/editar/:id_campanha"
           element={<CadastrarCampanha />}
         />
+        <Route path="/campanhas/:id_campanha" element={<DetalhesCampanha />} />
         <Route path="/ongs/:id_ong/imagens" element={<GerenciarImagens />} />
       </Routes>
     </BrowserRouter>
