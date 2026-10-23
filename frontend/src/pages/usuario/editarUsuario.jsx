@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Pencil } from "lucide-react";
-import { maskCPF, maskCelular } from "../../../js/masks";
+import { maskCPF, maskCelular } from "../../../js/validador";
 
 function EditarUsuario() {
   const { id } = useParams();
