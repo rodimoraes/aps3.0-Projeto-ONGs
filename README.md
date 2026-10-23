@@ -43,7 +43,9 @@ voluntario BOOLEAN NOT NULL,
 CREATE TABLE ong
 (
 id_ong INT PRIMARY KEY AUTO_INCREMENT,  
- nome VARCHAR(100),  
+ nome VARCHAR(100),
+ logo_url VARCHAR(150),
+ banner_url VARCHAR(150),
  id_usuario_representante INT,  
  id_categoria INT NOT NULL,  
  telefone INT,  
