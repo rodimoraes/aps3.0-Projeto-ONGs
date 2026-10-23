@@ -1,18 +1,14 @@
-# backend/ong.py
-
-from fastapi import APIRouter, HTTPException 
-from pydantic import BaseModel
+import os
 from typing import Optional
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 import mysql.connector
 from dotenv import load_dotenv
-import os
 
 load_dotenv()
 
-router = APIRouter(
-    prefix='/ongs',
-    tags=["ONGs"]
-)
+router = APIRouter(prefix="/ongs", tags=["ONGs"])
+
 
 def get_db_connection():
     return mysql.connector.connect(
@@ -22,12 +18,14 @@ def get_db_connection():
         database=os.getenv("DB_NAME"),
     )
 
-# Modelo atualizado com str para telefone e RCPJ
+
 class OngSchema(BaseModel):
     nome: str
+    logo_url: Optional[str] = None
+    banner_url: Optional[str] = None
     id_usuario_representante: int
     id_categoria: int
-    telefone: str # <--- Alterado para str (texto)
+    telefone: str
     endereco: str
     denominacao_social: str
     sigla: Optional[str] = None
@@ -37,141 +35,145 @@ class OngSchema(BaseModel):
     inscricao_municipal: str
     como_ajudar: Optional[str] = None
 
-OngSchema .model_rebuild()
 
-
-    
-@router.post("") #Define uma rota HTTP do tipo **POST** no caminho `/ongs`. É usada para **inserir** dados.
-
-def cadastrar_ong(ong: OngSchema): # Cria a função que recebe os dados do formulário já validados no parâmetro `ong`.
-    try: # Inicia um bloco de tratamento de exceções. Se houver falha de banco de dados, o código captura o erro.
-        conexao = get_db_connection() # Abre a conexão com o banco de dados MySQL.
-        cursor = conexao.cursor() # O "cursor" é o objeto encarregado de executar os comandos SQL no MySQL.
-        # Prepara a instrução SQL de inserção. Usamos `%s` como marcadores de posição para evitar vulnerabilidades de *SQL Injection*.
+@router.post("")
+def cadastrar_ong(ong: OngSchema):
+    try:
+        conexao = get_db_connection()
+        cursor = conexao.cursor()
         sql = """
-            INSERT INTO ong (
-            nome,
-            id_usuario_representante,
-            id_categoria,
-            telefone,
-            endereco,
-            denominacao_social,
-            sigla,
-            objetivo_social_finalidade,
-            RCPJ,
-            CNAE,
-            inscricao_municipal,
-            como_ajudar
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """
-
-        # Cria uma tupla contendo os valores na exata ordem dos marcadores `%s`.
-        valores=(
-                ong.nome,ong.id_usuario_representante,ong.id_categoria,ong.telefone,ong.endereco,ong.denominacao_social,ong.sigla,ong.objetivo_social_finalidade,ong.RCPJ,ong.CNAE,ong.inscricao_municipal,ong.como_ajudar)
-        # Envia o comando SQL com os dados com segurança para o banco.
-        cursor.execute(sql,valores)
-        # Confirma e grava a alteração definitivamente no banco de dados.
+        INSERT INTO ong (
+            nome, logo_url, banner_url, id_usuario_representante, id_categoria,
+            telefone, endereco, denominacao_social, sigla,
+            objetivo_social_finalidade, RCPJ, CNAE, inscricao_municipal, como_ajudar
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        valores = (
+            ong.nome,
+            ong.logo_url,
+            ong.banner_url,
+            ong.id_usuario_representante,
+            ong.id_categoria,
+            ong.telefone,
+            ong.endereco,
+            ong.denominacao_social,
+            ong.sigla,
+            ong.objetivo_social_finalidade,
+            ong.RCPJ,
+            ong.CNAE,
+            ong.inscricao_municipal,
+            ong.como_ajudar,
+        )
+        cursor.execute(sql, valores)
         conexao.commit()
-        # Captura o ID numérico que o MySQL gerou automaticamente para esta nova ONG.
         novo_id = cursor.lastrowid
-        # Fecha o cursor e a conexão para liberar memória e recursos do servidor.
         cursor.close()
         conexao.close()
-        # Retorna uma resposta JSON ao cliente confirmando o cadastro.
-        return{"status":"sucesso","mensagem":"ONG cadastrada com sucesso!","id":novo_id}
-    # Se ocorrer algum erro do MySQL, captura o erro e dispara uma mensagem HTTP 500.
+        return {
+            "status": "sucesso",
+            "mensagem": "ONG cadastrada com sucesso!",
+            "id": novo_id,
+        }
     except mysql.connector.Error as err:
-        raise HTTPException(status_code=500,detail=f"Erro no banco de dados:{err}")
+        raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
+
 
 @router.get("")
 def listar_ongs():
     try:
         conexao = get_db_connection()
-        cursor = conexao.cursor(dictionary=True) #O parâmetro `dictionary=True` faz o MySQL retornar cada registro como um dicionário Python (`{"nome": "ONG A", "telefone": 123}`), facilidade imediata para conversão em JSON.
-        cursor.execute("SELECT * FROM ong")
-        ongs = cursor.fetchall() #Coleta todas as linhas encontradas e as armazena na variável `ongs`.
+        cursor = conexao.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM ong ORDER BY id_ong DESC")
+        ongs = cursor.fetchall()
         cursor.close()
         conexao.close()
         return ongs
     except mysql.connector.Error as err:
-            raise HTTPException(status_code=500,detail=f"Erro no banco de dados:{err}")
+        raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
+
+
 @router.get("/{id_ong}")
 def buscar_ong(id_ong: int):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM ong WHERE id_ong = %s",(id_ong,))
+        cursor.execute("SELECT * FROM ong WHERE id_ong = %s", (id_ong,))
         ong = cursor.fetchone()
         cursor.close()
         conexao.close()
         if not ong:
-            raise HTTPException(status_code=404,detail="ONG não encontrada")
+            raise HTTPException(status_code=404, detail="ONG não encontrada")
         return ong
     except mysql.connector.Error as err:
-        raise HTTPException(status_code=500,detail=f"Erro no banco de dados:{err}")
+        raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
-# UPDATE
 @router.put("/{id_ong}")
-def atualizar_ong(id_ong: int,ong: OngSchema):
+def atualizar_ong(id_ong: int, ong: OngSchema):
     try:
-        conexao=get_db_connection()
+        conexao = get_db_connection()
         cursor = conexao.cursor()
         sql = """
-            UPDATE ong SET
-                nome=%s,id_usuario_representante=%s,id_categoria=%s,
-                telefone=%s,endereco=%s,denominacao_social=%s,sigla=%s,objetivo_social_finalidade=%s,RCPJ=%s,CNAE=%s,inscricao_municipal=%s,como_ajudar=%s WHERE id_ong=%s
+        UPDATE ong SET
+            nome = %s,
+            logo_url = %s,
+            banner_url = %s,
+            id_usuario_representante = %s,
+            id_categoria = %s,
+            telefone = %s,
+            endereco = %s,
+            denominacao_social = %s,
+            sigla = %s,
+            objetivo_social_finalidade = %s,
+            RCPJ = %s,
+            CNAE = %s,
+            inscricao_municipal = %s,
+            como_ajudar = %s
+        WHERE id_ong = %s
         """
-        valores=(
-            ong.nome,ong.id_usuario_representante,ong.id_categoria,
-            ong.telefone,ong.endereco,ong.denominacao_social,ong.sigla,ong.objetivo_social_finalidade,ong.RCPJ,ong.CNAE,ong.inscricao_municipal,ong.como_ajudar,id_ong)
-        cursor.execute(sql,valores)
+        valores = (
+            ong.nome,
+            ong.logo_url,
+            ong.banner_url,
+            ong.id_usuario_representante,
+            ong.id_categoria,
+            ong.telefone,
+            ong.endereco,
+            ong.denominacao_social,
+            ong.sigla,
+            ong.objetivo_social_finalidade,
+            ong.RCPJ,
+            ong.CNAE,
+            ong.inscricao_municipal,
+            ong.como_ajudar,
+            id_ong,
+        )
+        cursor.execute(sql, valores)
         conexao.commit()
+        linhas_afetadas = cursor.rowcount
         cursor.close()
         conexao.close()
-        return{"status":"sucesso","message":"ONG atualizada com sucesso!"}
+        if linhas_afetadas == 0:
+            raise HTTPException(status_code=404, detail="ONG não encontrada")
+        return {"status": "sucesso", "mensagem": "ONG atualizada com sucesso!"}
     except mysql.connector.Error as err:
-        raise HTTPException(status_code=500,detail=f"Erro no banco de dados:{err}")
+        raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
-# DELETE
+
 @router.delete("/{id_ong}")
 def deletar_ong(id_ong: int):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor()
-
-    # Executa a exclusão usando o nome exato da coluna do MySQL (id_ong)
         sql = "DELETE FROM ong WHERE id_ong = %s"
         cursor.execute(sql, (id_ong,))
         conexao.commit()
-
- # Verifica quantas linhas foram deletadas
         linhas_afetadas = cursor.rowcount
-
         cursor.close()
         conexao.close()
-
         if linhas_afetadas == 0:
-            raise HTTPException(status_code=404, detail="ONG não encontrada no banco de dados.")
-
+            raise HTTPException(status_code=404, detail="ONG não encontrada")
         return {"status": "sucesso", "mensagem": "ONG removida com sucesso!"}
-
     except mysql.connector.Error as err:
-        # Imprime o erro exato do MySQL no terminal do Uvicorn para facilitar o diagnóstico
-        print(f"---> ERRO DO MYSQL AO DELETAR: {err}")
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
-    except Exception as e:
-        # Captura qualquer outro erro de sintaxe do Python
-        print(f"---> ERRO DE PYTHON AO DELETAR: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro interno no servidor: {e}")
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
