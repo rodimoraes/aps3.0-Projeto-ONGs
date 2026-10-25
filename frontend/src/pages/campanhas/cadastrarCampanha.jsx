@@ -7,6 +7,7 @@ function CadastrarCampanha() {
   const isEdicao = Boolean(id_campanha);
   const [formCampanha, setFormCampanha] = useState({
     id_ong: id_ong || "",
+    id_tipo_campanha: 1, // 1 = Arrecadação (Padrão), 2 = Voluntariado
     titulo: "",
     descricao: "",
     data_inicio: "",
@@ -164,6 +165,26 @@ font-medium mb-6 text-sm transition-colors"
                 className="w-full px-3.5 py-2 rounded-xl border border-slate-300 textslate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               />
             </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Tipo de Campanha <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="id_tipo_campanha"
+              value={formCampanha.id_tipo_campanha}
+              onChange={(e) =>
+                setFormCampanha({
+                  ...formCampanha,
+                  id_tipo_campanha: Number(e.target.value),
+                })
+              }
+              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800
+focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+            >
+              <option value={1}>Arrecadação (Doações / Itens)</option>
+              <option value={2}>Voluntariado (Engajamento de Pessoas)</option>
+            </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

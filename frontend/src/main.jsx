@@ -20,6 +20,7 @@ import GerenciarImagens from "./pages/gerenciarImagens";
 import DetalhesCampanha from "./pages/campanhas/detalhesCampanha";
 import ListarCampanhas from "./pages/campanhas/listarCampanhas";
 import CadastrarCampanha from "./pages/campanhas/cadastrarCampanha";
+import EditarCampanha from "./pages/campanhas/editarCampanha";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -44,7 +45,7 @@ createRoot(document.getElementById("root")).render(
         />
         <Route
           path="/campanhas/editar/:id_campanha"
-          element={<CadastrarCampanha />}
+          element={<EditarCampanha />}
         />
         <Route path="/campanhas/:id_campanha" element={<DetalhesCampanha />} />
         <Route path="/ongs/:id_ong/imagens" element={<GerenciarImagens />} />

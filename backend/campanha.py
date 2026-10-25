@@ -11,19 +11,19 @@ load_dotenv()
 router = APIRouter(prefix="/campanhas", tags=["Campanhas"])
 
 
-# Conexão com o banco de dados MySQL
 def get_db_connection():
     return mysql.connector.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME"),
+        host=os.getenv("DB_HOST", "localhost"),
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("DB_PASSWORD", "123456"),
+        database=os.getenv("DB_NAME", "bd_encontreong"),
     )
 
 
-# Schema de validação dos dados da Campanha com Pydantic
+# Schema Pydantic atualizado com id_tipo_campanha
 class CampanhaSchema(BaseModel):
     id_ong: int
+    id_tipo_campanha: int  # 1: Arrecadação, 2: Voluntariado
     titulo: str
     descricao: str
     data_inicio: date
@@ -33,7 +33,11 @@ class CampanhaSchema(BaseModel):
     status: Optional[str] = "ativa"
 
 
-# 1. CREATE - Cadastrar nova campanha atrelada a uma ONG
+class InscricaoVoluntarioSchema(BaseModel):
+    id_usuario: int
+
+
+# 1. CREATE - Cadastrar nova campanha
 @router.post("")
 def cadastrar_campanha(campanha: CampanhaSchema):
     try:
@@ -41,12 +45,13 @@ def cadastrar_campanha(campanha: CampanhaSchema):
         cursor = conexao.cursor()
         sql = """
         INSERT INTO campanha (
-            id_ong, titulo, descricao, data_inicio,
+            id_ong, id_tipo_campanha, titulo, descricao, data_inicio,
             data_fim, meta_arrecadacao, valor_arrecadado, status
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         valores = (
             campanha.id_ong,
+            campanha.id_tipo_campanha,
             campanha.titulo,
             campanha.descricao,
             campanha.data_inicio,
@@ -70,12 +75,19 @@ def cadastrar_campanha(campanha: CampanhaSchema):
 
 
 # 2. READ - Listar todas as campanhas de UMA ONG ESPECÍFICA
+# (Deve ser declarada ANTES da rota GET /{id_campanha})
 @router.get("/ong/{id_ong}")
 def listar_campanhas_por_ong(id_ong: int):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor(dictionary=True)
-        sql = "SELECT * FROM campanha WHERE id_ong = %s ORDER BY id_campanha DESC"
+        sql = """
+        SELECT c.*, t.nome as tipo_nome
+        FROM campanha c
+        LEFT JOIN tipo_campanha t ON c.id_tipo_campanha = t.id_tipo_campanha
+        WHERE c.id_ong = %s
+        ORDER BY c.id_campanha DESC
+        """
         cursor.execute(sql, (id_ong,))
         campanhas = cursor.fetchall()
         cursor.close()
@@ -85,13 +97,18 @@ def listar_campanhas_por_ong(id_ong: int):
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
-# 3. READ - Buscar detalhes de uma campanha específica
+# 3. READ - Buscar detalhes de UMA campanha específica
 @router.get("/{id_campanha}")
 def buscar_campanha(id_campanha: int):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor(dictionary=True)
-        sql = "SELECT * FROM campanha WHERE id_campanha = %s"
+        sql = """
+        SELECT c.*, t.nome as tipo_nome
+        FROM campanha c
+        LEFT JOIN tipo_campanha t ON c.id_tipo_campanha = t.id_tipo_campanha
+        WHERE c.id_campanha = %s
+        """
         cursor.execute(sql, (id_campanha,))
         campanha = cursor.fetchone()
         cursor.close()
@@ -111,6 +128,7 @@ def atualizar_campanha(id_campanha: int, campanha: CampanhaSchema):
         cursor = conexao.cursor()
         sql = """
         UPDATE campanha SET
+            id_tipo_campanha = %s,
             titulo = %s,
             descricao = %s,
             data_inicio = %s,
@@ -121,6 +139,7 @@ def atualizar_campanha(id_campanha: int, campanha: CampanhaSchema):
         WHERE id_campanha = %s
         """
         valores = (
+            campanha.id_tipo_campanha,
             campanha.titulo,
             campanha.descricao,
             campanha.data_inicio,
@@ -158,5 +177,74 @@ def deletar_campanha(id_campanha: int):
         if linhas_afetadas == 0:
             raise HTTPException(status_code=404, detail="Campanha não encontrada")
         return {"status": "sucesso", "mensagem": "Campanha removida com sucesso!"}
+    except mysql.connector.Error as err:
+        raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
+
+
+# 6. INSCRIÇÃO - Inscrever voluntário na campanha
+@router.post("/{id_campanha}/inscrever")
+def inscrever_voluntario(id_campanha: int, dados: InscricaoVoluntarioSchema):
+    try:
+        conexao = get_db_connection()
+        cursor = conexao.cursor()
+        sql = """
+        INSERT INTO voluntario_campanha (id_usuario, id_campanha, status)
+        VALUES (%s, %s, 'inscrito')
+        """
+        cursor.execute(sql, (dados.id_usuario, id_campanha))
+        conexao.commit()
+        cursor.close()
+        conexao.close()
+        return {"status": "sucesso", "mensagem": "Inscrição realizada com sucesso!"}
+    except mysql.connector.Error as err:
+        if err.errno == 1062:
+            raise HTTPException(
+                status_code=400,
+                detail="Você já está inscrito nesta campanha."
+            )
+        raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
+
+
+# 7. VERIFICAR INSCRIÇÃO - Checa se o usuário já se inscreveu
+@router.get("/{id_campanha}/inscricao/{id_usuario}")
+def verificar_inscricao(id_campanha: int, id_usuario: int):
+    try:
+        conexao = get_db_connection()
+        cursor = conexao.cursor(dictionary=True)
+        sql = "SELECT * FROM voluntario_campanha WHERE id_campanha = %s AND id_usuario = %s"
+        cursor.execute(sql, (id_campanha, id_usuario))
+        inscricao = cursor.fetchone()
+        cursor.close()
+        conexao.close()
+        return {"inscrito": bool(inscricao), "dados": inscricao}
+    except mysql.connector.Error as err:
+        raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
+    
+# 8. LISTAR VOLUNTÁRIOS DA CAMPANHA - Busca os dados de contato dos inscritos
+# Rota para listar os voluntários de uma campanha específica
+@router.get("/{id_campanha}/voluntarios")
+def listar_voluntarios_campanha(id_campanha: int):
+    try:
+        conexao = get_db_connection()
+        cursor = conexao.cursor(dictionary=True)
+        sql = """
+        SELECT
+            v.id_voluntario_campanha,
+            v.data_inscricao,
+            v.status,
+            u.id_usuario,
+            u.nome,
+            u.email,
+            u.celular
+        FROM voluntario_campanha v
+        INNER JOIN usuario u ON v.id_usuario = u.id_usuario
+        WHERE v.id_campanha = %s
+        ORDER BY v.data_inscricao DESC
+        """
+        cursor.execute(sql, (id_campanha,))
+        voluntarios = cursor.fetchall()
+        cursor.close()
+        conexao.close()
+        return voluntarios
     except mysql.connector.Error as err:
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
