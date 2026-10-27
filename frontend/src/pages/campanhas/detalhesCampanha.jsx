@@ -271,7 +271,7 @@ space-y-6"
                   }`}
                 />
                 {ehVoluntariado
-                  ? "Engajamento da Equipe"
+                  ? "Meta da Campanha"
                   : "Progresso da Arrecadação"}
               </span>
               <span
@@ -297,10 +297,10 @@ space-y-6"
                 <>
                   <div>
                     <p className="text-slate-400 uppercase font-semibold text-[10px]">
-                      Meta de Voluntários
+                      Meta:
                     </p>
                     <p className="text-lg font-black text-slate-800">
-                      {meta} pessoas
+                      {meta} voluntários
                     </p>
                   </div>
                   <div>
@@ -311,8 +311,7 @@ space-y-6"
                       Inscritos Atualmente
                     </p>
                     <p className="text-lg font-black text-purple-700">
-                      {voluntarios.length}
-                      voluntários
+                      {voluntarios.length} voluntários
                     </p>
                   </div>
                 </>
