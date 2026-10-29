@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, LogIn } from "lucide-react";
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = location.state?.redirectTo || "/";
+
   const [credentials, setCredentials] = useState({ email: "", senha: "" });
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -27,17 +30,24 @@ function Login() {
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok && data.access_token) {
         localStorage.setItem("token", data.access_token);
         localStorage.setItem("usuario", JSON.stringify(data.usuario));
+        window.dispatchEvent(new Event("usuarioAtualizado"));
         alert(`Bem-vindo(a), ${data.usuario.nome}!`);
-        navigate("/");
+        navigate(redirectTo, { replace: true });
       } else {
-        setErro(data.detail || "Falha no login.");
+        const detalhe = data.detail;
+        const msg = Array.isArray(detalhe)
+          ? detalhe.map((e) => e.msg).join(", ")
+          : detalhe || "Falha no login. Verifique e-mail e senha.";
+        setErro(msg);
       }
     } catch (error) {
       console.error("Erro no login:", error);
-      setErro("Erro ao conectar com o servidor.");
+      setErro(
+        "Erro ao conectar com o servidor. Verifique se o backend está rodando em http://localhost:8000.",
+      );
     } finally {
       setCarregando(false);
     }
@@ -83,6 +93,7 @@ function Login() {
               value={credentials.email}
               onChange={handleChange}
               required
+              autoComplete="email"
               className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
             />
           </div>
@@ -97,6 +108,7 @@ function Login() {
               value={credentials.senha}
               onChange={handleChange}
               required
+              autoComplete="current-password"
               className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all"
             />
           </div>

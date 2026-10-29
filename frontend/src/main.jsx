@@ -3,8 +3,10 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import "./index.css";
+import ScrollToTop from "./components/ScrollToTop";
 import Home from "./pages/home";
 import Login from "./pages/login";
+import ExplorarOngs from "./pages/explorarOngs";
 
 import CadastrarUsuario from "./pages/usuario/cadastrarUsuario";
 import ListarUsuarios from "./pages/usuario/ListarUsuarios";
@@ -25,9 +27,12 @@ import EditarCampanha from "./pages/campanhas/editarCampanha";
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+
+        <Route path="/explorar-ongs" element={<ExplorarOngs />} />
 
         <Route path="/cadastrar-ong" element={<CadastrarOng />} />
         <Route path="/ongs" element={<ListarOngs />} />

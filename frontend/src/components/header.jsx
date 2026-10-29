@@ -8,6 +8,8 @@ import {
   Home,
   LogIn,
   LogOut,
+  PlusCircle,
+  Compass,
 } from "lucide-react";
 
 function Header() {
@@ -16,16 +18,24 @@ function Header() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const usuarioSalvo = localStorage.getItem("usuario");
-    if (usuarioSalvo) {
-      setUsuario(JSON.parse(usuarioSalvo));
-    }
+    const loadUser = () => {
+      const u = localStorage.getItem("usuario");
+      setUsuario(u ? JSON.parse(u) : null);
+    };
+    loadUser();
+    window.addEventListener("usuarioAtualizado", loadUser);
+    window.addEventListener("storage", loadUser);
+    return () => {
+      window.removeEventListener("usuarioAtualizado", loadUser);
+      window.removeEventListener("storage", loadUser);
+    };
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
     setUsuario(null);
+    window.dispatchEvent(new Event("usuarioAtualizado"));
     fecharMenu();
     navigate("/login");
   };
@@ -61,7 +71,7 @@ function Header() {
             <>
               <div className="fixed inset-0 z-40" onClick={fecharMenu} />
 
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-lg border border-slate-200 py-2 z-50">
+              <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-lg border border-slate-200 py-2 z-50">
                 <p className="px-4 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">
                   Menu Principal
                 </p>
@@ -76,22 +86,42 @@ function Header() {
                 </Link>
 
                 <Link
+                  to="/explorar-ongs"
+                  onClick={fecharMenu}
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                >
+                  <Compass className="w-4 h-4 text-slate-500" />
+                  <span>Explorar ONGs</span>
+                </Link>
+
+                <Link
                   to="/usuarios"
                   onClick={fecharMenu}
                   className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors"
                 >
                   <Users className="w-4 h-4 text-slate-500" />
-                  <span>CRUD Usuários</span>
+                  <span>Usuários</span>
                 </Link>
 
                 <Link
                   to="/ongs"
                   onClick={fecharMenu}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
                 >
-                  <HeartHandshake className="w-4 h-4 text-slate-500" />
-                  <span>CRUD ONGs</span>
+                  <HeartHandshake className="w-4 h-4 text-slate-400" />
+                  <span>Gerenciar ONGs</span>
                 </Link>
+
+                {usuario && !usuario.representante_ong && (
+                  <Link
+                    to="/cadastrar-ong"
+                    onClick={fecharMenu}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-emerald-700 hover:bg-emerald-50 transition-colors"
+                  >
+                    <PlusCircle className="w-4 h-4 text-emerald-600" />
+                    <span>Cadastrar Minha ONG</span>
+                  </Link>
+                )}
 
                 <div className="border-t border-slate-100 my-1" />
 

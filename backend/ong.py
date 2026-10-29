@@ -1,9 +1,11 @@
 import os
 from typing import Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 import mysql.connector
 from dotenv import load_dotenv
+
+from auth import obter_usuario_atual
 
 load_dotenv()
 
@@ -23,7 +25,6 @@ class OngSchema(BaseModel):
     nome: str
     logo_url: Optional[str] = None
     banner_url: Optional[str] = None
-    id_usuario_representante: int
     id_categoria: int
     telefone: str
     endereco: str
@@ -36,11 +37,31 @@ class OngSchema(BaseModel):
     como_ajudar: Optional[str] = None
 
 
+# ============================================================
+# CREATE — requer login. Só pode ter 1 ONG por representante.
+# ============================================================
 @router.post("")
-def cadastrar_ong(ong: OngSchema):
+def cadastrar_ong(ong: OngSchema, usuario_atual: dict = Depends(obter_usuario_atual)):
     try:
         conexao = get_db_connection()
+        cursor = conexao.cursor(dictionary=True)
+
+        # Verifica se o usuário já é representante de alguma ONG
+        cursor.execute(
+            "SELECT id_ong FROM ong WHERE id_usuario_representante = %s",
+            (usuario_atual["id_usuario"],)
+        )
+        if cursor.fetchone():
+            cursor.close()
+            conexao.close()
+            raise HTTPException(
+                status_code=400,
+                detail="Você já é representante de uma ONG. Não é possível cadastrar outra."
+            )
+
+        cursor.close()
         cursor = conexao.cursor()
+
         sql = """
         INSERT INTO ong (
             nome, logo_url, banner_url, id_usuario_representante, id_categoria,
@@ -52,7 +73,7 @@ def cadastrar_ong(ong: OngSchema):
             ong.nome,
             ong.logo_url,
             ong.banner_url,
-            ong.id_usuario_representante,
+            usuario_atual["id_usuario"],
             ong.id_categoria,
             ong.telefone,
             ong.endereco,
@@ -65,8 +86,15 @@ def cadastrar_ong(ong: OngSchema):
             ong.como_ajudar,
         )
         cursor.execute(sql, valores)
-        conexao.commit()
         novo_id = cursor.lastrowid
+
+        # Marca o usuário como representante
+        cursor.execute(
+            "UPDATE usuario SET representante_ong = TRUE WHERE id_usuario = %s",
+            (usuario_atual["id_usuario"],)
+        )
+
+        conexao.commit()
         cursor.close()
         conexao.close()
         return {
@@ -78,6 +106,9 @@ def cadastrar_ong(ong: OngSchema):
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
+# ============================================================
+# READ — público (qualquer pessoa pode listar/ver)
+# ============================================================
 @router.get("")
 def listar_ongs():
     try:
@@ -108,17 +139,42 @@ def buscar_ong(id_ong: int):
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
+# ============================================================
+# UPDATE — só o representante da própria ONG pode editar
+# ============================================================
 @router.put("/{id_ong}")
-def atualizar_ong(id_ong: int, ong: OngSchema):
+def atualizar_ong(id_ong: int, ong: OngSchema, usuario_atual: dict = Depends(obter_usuario_atual)):
     try:
         conexao = get_db_connection()
+        cursor = conexao.cursor(dictionary=True)
+
+        cursor.execute(
+            "SELECT id_usuario_representante FROM ong WHERE id_ong = %s",
+            (id_ong,)
+        )
+        ong_data = cursor.fetchone()
+
+        if not ong_data:
+            cursor.close()
+            conexao.close()
+            raise HTTPException(status_code=404, detail="ONG não encontrada")
+
+        if ong_data["id_usuario_representante"] != usuario_atual["id_usuario"]:
+            cursor.close()
+            conexao.close()
+            raise HTTPException(
+                status_code=403,
+                detail="Você não tem permissão para editar esta ONG."
+            )
+
+        cursor.close()
         cursor = conexao.cursor()
+
         sql = """
         UPDATE ong SET
             nome = %s,
             logo_url = %s,
             banner_url = %s,
-            id_usuario_representante = %s,
             id_categoria = %s,
             telefone = %s,
             endereco = %s,
@@ -135,7 +191,6 @@ def atualizar_ong(id_ong: int, ong: OngSchema):
             ong.nome,
             ong.logo_url,
             ong.banner_url,
-            ong.id_usuario_representante,
             ong.id_categoria,
             ong.telefone,
             ong.endereco,
@@ -150,30 +205,54 @@ def atualizar_ong(id_ong: int, ong: OngSchema):
         )
         cursor.execute(sql, valores)
         conexao.commit()
-        linhas_afetadas = cursor.rowcount
         cursor.close()
         conexao.close()
-        if linhas_afetadas == 0:
-            raise HTTPException(status_code=404, detail="ONG não encontrada")
         return {"status": "sucesso", "mensagem": "ONG atualizada com sucesso!"}
     except mysql.connector.Error as err:
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
+# ============================================================
+# DELETE — só o representante da própria ONG pode excluir
+# ============================================================
 @router.delete("/{id_ong}")
-def deletar_ong(id_ong: int):
+def deletar_ong(id_ong: int, usuario_atual: dict = Depends(obter_usuario_atual)):
     try:
         conexao = get_db_connection()
+        cursor = conexao.cursor(dictionary=True)
+
+        cursor.execute(
+            "SELECT id_usuario_representante FROM ong WHERE id_ong = %s",
+            (id_ong,)
+        )
+        ong_data = cursor.fetchone()
+
+        if not ong_data:
+            cursor.close()
+            conexao.close()
+            raise HTTPException(status_code=404, detail="ONG não encontrada")
+
+        if ong_data["id_usuario_representante"] != usuario_atual["id_usuario"]:
+            cursor.close()
+            conexao.close()
+            raise HTTPException(
+                status_code=403,
+                detail="Você não tem permissão para excluir esta ONG."
+            )
+
+        cursor.close()
         cursor = conexao.cursor()
-        sql = "DELETE FROM ong WHERE id_ong = %s"
-        cursor.execute(sql, (id_ong,))
+
+        # Desmarca o usuário como representante
+        cursor.execute(
+            "UPDATE usuario SET representante_ong = FALSE WHERE id_usuario = %s",
+            (usuario_atual["id_usuario"],)
+        )
+
+        cursor.execute("DELETE FROM ong WHERE id_ong = %s", (id_ong,))
         conexao.commit()
-        linhas_afetadas = cursor.rowcount
         cursor.close()
         conexao.close()
-        if linhas_afetadas == 0:
-            raise HTTPException(status_code=404, detail="ONG não encontrada")
         return {"status": "sucesso", "mensagem": "ONG removida com sucesso!"}
     except mysql.connector.Error as err:
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
-

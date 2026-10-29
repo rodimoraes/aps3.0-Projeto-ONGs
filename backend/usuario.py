@@ -10,10 +10,8 @@ from auth import gerar_hash_senha, verificar_senha, criar_token_acesso, obter_us
 
 load_dotenv()
 
-router = APIRouter(
-    prefix="/usuarios",
-    tags=["Usuários"]
-)
+router = APIRouter(prefix="/usuarios", tags=["Usuários"])
+
 
 def get_db_connection():
     return mysql.connector.connect(
@@ -34,10 +32,8 @@ class UsuarioSchema(BaseModel):
     data_nascimento: str
     celular: str
     voluntario: bool = False
-    representante_ong: bool = False
 
 
-# Schema separado para UPDATE (não exige senha — evita 422 no editarUsuario.jsx)
 class UsuarioUpdateSchema(BaseModel):
     nome: str
     cpf: str
@@ -47,7 +43,6 @@ class UsuarioUpdateSchema(BaseModel):
     data_nascimento: str
     celular: str
     voluntario: bool = False
-    representante_ong: bool = False
 
 
 class LoginSchema(BaseModel):
@@ -56,7 +51,8 @@ class LoginSchema(BaseModel):
 
 
 # ============================================================
-# 1. C - CREATE (com hash de senha)
+# CREATE — representante_ong sempre começa como FALSE
+# (vira TRUE só ao criar uma ONG, via POST /ongs)
 # ============================================================
 @router.post("")
 def cadastrar_usuario(usuario: UsuarioSchema):
@@ -82,7 +78,7 @@ def cadastrar_usuario(usuario: UsuarioSchema):
             usuario.data_nascimento,
             usuario.celular,
             usuario.voluntario,
-            usuario.representante_ong
+            False,  # representante_ong sempre FALSE no cadastro
         )
 
         cursor.execute(sql, valores)
@@ -103,7 +99,7 @@ def cadastrar_usuario(usuario: UsuarioSchema):
 
 
 # ============================================================
-# Login (Autenticação)
+# LOGIN
 # ============================================================
 @router.post("/login")
 def login(dados: LoginSchema):
@@ -120,7 +116,10 @@ def login(dados: LoginSchema):
         if not usuario or not verificar_senha(dados.senha, usuario["senha"]):
             raise HTTPException(status_code=400, detail="E-mail ou senha incorretos.")
 
-        token = criar_token_acesso(data={"sub": usuario["email"], "id_usuario": usuario["id_usuario"]})
+        token = criar_token_acesso(data={
+            "sub": usuario["email"],
+            "id_usuario": usuario["id_usuario"],
+        })
 
         return {
             "status": "sucesso",
@@ -130,7 +129,8 @@ def login(dados: LoginSchema):
                 "id_usuario": usuario["id_usuario"],
                 "nome": usuario["nome"],
                 "email": usuario["email"],
-                "representante_ong": bool(usuario["representante_ong"])
+                "voluntario": bool(usuario["voluntario"]),
+                "representante_ong": bool(usuario["representante_ong"]),
             }
         }
     except mysql.connector.Error as err:
@@ -138,7 +138,7 @@ def login(dados: LoginSchema):
 
 
 # ============================================================
-# Rota protegida de teste (perfil logado)
+# Rota protegida de teste
 # ============================================================
 @router.get("/me")
 def perfil_usuario_logado(usuario_atual: dict = Depends(obter_usuario_atual)):
@@ -146,7 +146,7 @@ def perfil_usuario_logado(usuario_atual: dict = Depends(obter_usuario_atual)):
 
 
 # ============================================================
-# 2. R - READ ALL
+# READ ALL
 # ============================================================
 @router.get("")
 def listar_usuarios():
@@ -172,7 +172,7 @@ def listar_usuarios():
 
 
 # ============================================================
-# 3. R - READ ONE
+# READ ONE
 # ============================================================
 @router.get("/{id_usuario}")
 def buscar_usuario(id_usuario: int):
@@ -201,19 +201,33 @@ def buscar_usuario(id_usuario: int):
 
 
 # ============================================================
-# 4. U - UPDATE
+# UPDATE — representante_ong NÃO é alterável por aqui
 # ============================================================
 @router.put("/{id_usuario}")
 def atualizar_usuario(id_usuario: int, usuario: UsuarioUpdateSchema):
     try:
         conexao = get_db_connection()
-        cursor = conexao.cursor()
+        cursor = conexao.cursor(dictionary=True)
 
+        # 1) Verifica se o usuário existe PRIMEIRO
+        cursor.execute(
+            "SELECT id_usuario FROM usuario WHERE id_usuario = %s",
+            (id_usuario,),
+        )
+        if not cursor.fetchone():
+            cursor.close()
+            conexao.close()
+            raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+
+        cursor.close()
+
+        # 2) Executa o UPDATE (mesmo que nada mude, retornamos sucesso)
+        cursor = conexao.cursor()
         sql = """
             UPDATE usuario SET
                 nome=%s, cpf=%s, endereco=%s, estado_civil=%s,
                 email=%s, data_nascimento=%s, celular=%s,
-                voluntario=%s, representante_ong=%s
+                voluntario=%s
             WHERE id_usuario=%s
         """
         valores = (
@@ -225,8 +239,40 @@ def atualizar_usuario(id_usuario: int, usuario: UsuarioUpdateSchema):
             usuario.data_nascimento,
             usuario.celular,
             usuario.voluntario,
-            usuario.representante_ong,
-            id_usuario
+            id_usuario,
+        )
+
+        cursor.execute(sql, valores)
+        conexao.commit()
+        cursor.close()
+        conexao.close()
+
+        return {"status": "sucesso", "mensagem": "Usuário atualizado com sucesso!"}
+    except mysql.connector.Error as err:
+        raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
+
+
+    try:
+        conexao = get_db_connection()
+        cursor = conexao.cursor()
+
+        sql = """
+            UPDATE usuario SET
+                nome=%s, cpf=%s, endereco=%s, estado_civil=%s,
+                email=%s, data_nascimento=%s, celular=%s,
+                voluntario=%s
+            WHERE id_usuario=%s
+        """
+        valores = (
+            usuario.nome,
+            usuario.cpf,
+            usuario.endereco,
+            usuario.estado_civil,
+            usuario.email,
+            usuario.data_nascimento,
+            usuario.celular,
+            usuario.voluntario,
+            id_usuario,
         )
 
         cursor.execute(sql, valores)
@@ -245,7 +291,7 @@ def atualizar_usuario(id_usuario: int, usuario: UsuarioUpdateSchema):
 
 
 # ============================================================
-# 5. D - DELETE
+# DELETE
 # ============================================================
 @router.delete("/{id_usuario}")
 def deletar_usuario(id_usuario: int):

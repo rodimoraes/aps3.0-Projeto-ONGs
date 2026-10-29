@@ -4,6 +4,9 @@ import Header from "../components/header";
 import { ChevronLeft, ChevronRight, Heart, ArrowRight } from "lucide-react";
 import Footer from "../components/footer";
 
+const PLACEHOLDER =
+  "https://images.unsplash.com/photo-1532629345422-7515f3d16bb0?w=600&auto=format&fit=crop";
+
 function Home() {
   const carouselSlides = [
     {
@@ -29,9 +32,7 @@ function Home() {
     },
   ];
 
-  // Estado do Carrossel
   const [currentSlide, setCurrentSlide] = useState(0);
-
   const [ongsDestaque, setOngsDestaque] = useState([]);
   const [loadingOngs, setLoadingOngs] = useState(true);
 
@@ -47,7 +48,6 @@ function Home() {
     );
   };
 
-  // Autoplay para o carrossel (muda a cada 5 segundos)
   useEffect(() => {
     const timer = setInterval(() => {
       nextSlide();
@@ -55,7 +55,6 @@ function Home() {
     return () => clearInterval(timer);
   }, [currentSlide]);
 
-  // Carrega as 3 últimas ONGs e suas respectivas imagens do backend
   useEffect(() => {
     const carregarOngsDestaque = async () => {
       try {
@@ -63,12 +62,10 @@ function Home() {
         const res = await fetch("http://127.0.0.1:8000/ongs");
         if (res.ok) {
           const data = await res.json();
-          // Ordena decrescente pelo id_ong e pega as 3 últimas cadastradas
           const ultimasOngs = [...data]
             .sort((a, b) => b.id_ong - a.id_ong)
             .slice(0, 3);
 
-          // Busca a imagem principal de cada ONG em paralelo
           const ongsComImagem = await Promise.all(
             ultimasOngs.map(async (ong) => {
               try {
@@ -79,13 +76,18 @@ function Home() {
                   const imgs = await resImg.json();
                   return {
                     ...ong,
-                    imagemUrl: imgs.length > 0 ? imgs[0].url : null,
+                    // Prioridade: galeria → banner → logo
+                    imagemUrl:
+                      imgs[0]?.url || ong.banner_url || ong.logo_url || null,
                   };
                 }
               } catch (err) {
                 console.error("Erro ao buscar imagem da ONG:", err);
               }
-              return { ...ong, imagemUrl: null };
+              return {
+                ...ong,
+                imagemUrl: ong.banner_url || ong.logo_url || null,
+              };
             }),
           );
 
@@ -103,7 +105,6 @@ function Home() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Cabeçalho */}
       <Header />
 
       {/* SEÇÃO HERO & CARROSSEL */}
@@ -130,7 +131,7 @@ function Home() {
                 </p>
                 <div className="flex flex-wrap gap-4 justify-center">
                   <Link
-                    to="/ongs"
+                    to="/explorar-ongs"
                     className="flex items-center gap-2 px-6 py-3 font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-lg transition-all active:scale-95 cursor-pointer"
                   >
                     <span>Conhecer ONGs</span>
@@ -145,7 +146,6 @@ function Home() {
             </div>
           ))}
 
-          {/* Botões do Carrossel */}
           <button
             onClick={prevSlide}
             aria-label="Slide anterior"
@@ -161,7 +161,6 @@ function Home() {
             <ChevronRight className="w-6 h-6" />
           </button>
 
-          {/* Indicadores */}
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
             {carouselSlides.map((_, index) => (
               <button
@@ -179,12 +178,12 @@ function Home() {
         </div>
       </section>
 
-      {/* SEÇÃO SOBRE ONGS */}
+      {/* SEÇÃO SOBRE ONGs */}
       <section className="py-16 bg-blue-900 text-white mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-3xl font-extrabold mb-4">
-              Texto sobre ONGs / o que é uma ONGs e sua importancia
+              Texto sobre ONGs / o que é uma ONG e sua importância
             </h2>
             <p className="text-blue-100 mb-4 leading-relaxed">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras nec
@@ -199,15 +198,15 @@ function Home() {
           </div>
           <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-blue-700/50">
             <img
-              src="###"
-              alt="Colocar Imagem"
+              src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&auto=format&fit=crop"
+              alt="ONGs em ação"
               className="w-full h-80 object-cover"
             />
           </div>
         </div>
       </section>
 
-      {/* SEÇÃO DINÂMICA: PROJETOS E ONGS EM DESTAQUE */}
+      {/* SEÇÃO DINÂMICA: ONGs EM DESTAQUE */}
       <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <h2 className="text-3xl font-bold text-slate-900 mb-3">
@@ -229,51 +228,62 @@ function Home() {
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {ongsDestaque.map((ong) => (
-              <div
-                key={ong.id_ong}
-                className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden hover:shadow-md transition-shadow group flex flex-col justify-between"
-              >
-                <div>
-                  <div className="h-48 overflow-hidden relative bg-slate-100">
-                    <img
-                      src={
-                        ong.imagemUrl ||
-                        "https://images.unsplash.com/photo-1532629345422-7515f3d16bb0?w=600&auto=format&fit=crop"
-                      }
-                      alt={ong.nome}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        e.target.src =
-                          "https://images.unsplash.com/photo-1532629345422-7515f3d16bb0?w=600&auto=format&fit=crop";
-                      }}
-                    />
+            {ongsDestaque.map((ong) => {
+              // Prioridade: galeria → banner → logo → placeholder
+              const imagemBase =
+                ong.imagemUrl || ong.banner_url || ong.logo_url || PLACEHOLDER;
+              return (
+                <div
+                  key={ong.id_ong}
+                  className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden hover:shadow-md transition-shadow group flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="h-48 overflow-hidden relative bg-slate-100">
+                      <img
+                        src={imagemBase}
+                        alt={ong.nome}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          e.target.src = PLACEHOLDER;
+                        }}
+                      />
+                    </div>
+                    <div className="p-6">
+                      <h3 className="font-bold text-lg text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">
+                        {ong.nome}
+                      </h3>
+                      <p className="text-sm text-slate-600 mb-4 line-clamp-3 leading-relaxed">
+                        {ong.objetivo_social_finalidade ||
+                          "Sem descrição disponível."}
+                      </p>
+                    </div>
                   </div>
-                  <div className="p-6">
-                    <h3 className="font-bold text-lg text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">
-                      {ong.nome}
-                    </h3>
-                    <p className="text-sm text-slate-600 mb-4 line-clamp-3 leading-relaxed">
-                      {ong.objetivo_social_finalidade ||
-                        "Sem descrição disponível."}
-                    </p>
-                  </div>
-                </div>
 
-                <div className="px-6 pb-6 pt-0">
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs text-slate-500">
-                    <Link
-                      to={`/ongs/${ong.id_ong}`}
-                      className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
-                    >
-                      Saiba mais &rarr;
-                    </Link>
+                  <div className="px-6 pb-6 pt-0">
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs text-slate-500">
+                      <Link
+                        to={`/ongs/${ong.id_ong}`}
+                        className="font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                      >
+                        Saiba mais &rarr;
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
+
+        <div className="text-center mt-10">
+          <Link
+            to="/explorar-ongs"
+            className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition-all"
+          >
+            <span>Ver todas as ONGs</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
       </section>
 
       {/* SEÇÃO INFORMATIVA COMO FUNCIONA */}
@@ -304,8 +314,8 @@ function Home() {
           </div>
           <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-blue-700/50">
             <img
-              src="#"
-              alt="Imagem Legal"
+              src="https://images.unsplash.com/photo-1593113598332-cd288d649433?w=800&auto=format&fit=crop"
+              alt="Voluntários"
               className="w-full h-80 object-cover"
             />
           </div>

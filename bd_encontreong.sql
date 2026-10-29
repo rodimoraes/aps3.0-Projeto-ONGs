@@ -28,16 +28,16 @@ CREATE TABLE ong
 (
 id_ong INT PRIMARY KEY AUTO_INCREMENT,  
 nome VARCHAR(100),
-logo_url VARCHAR(150),
-banner_url VARCHAR(150),
+logo_url VARCHAR(500),
+banner_url VARCHAR(500),
 id_usuario_representante INT,  
 id_categoria INT NOT NULL,  
-telefone INT,  
+telefone VARCHAR(20),  
 endereco VARCHAR(100),  
 denominacao_social VARCHAR(100) NOT NULL,  
 sigla VARCHAR(100),  
 objetivo_social_finalidade VARCHAR(100) NOT NULL,  
-RCPJ INT NOT NULL,  
+RCPJ VARCHAR(30) NOT NULL,  
 CNAE VARCHAR(100) NOT NULL,  
 inscricao_municipal VARCHAR(100) NOT NULL,  
 como_ajudar VARCHAR(100)  
@@ -74,7 +74,7 @@ id_img INT AUTO_INCREMENT PRIMARY KEY,
 id_ong INT,
 id_campanha INT,
 descricao VARCHAR(150) NOT NULL,
-url VARCHAR(150) NOT NULL,
+url VARCHAR(500) NOT NULL,
 unique(url),
 FOREIGN KEY (id_ong) REFERENCES ong(id_ong) ON DELETE CASCADE,
 FOREIGN KEY (id_campanha) REFERENCES campanha(id_campanha) ON DELETE CASCADE
@@ -105,5 +105,3 @@ CREATE TABLE voluntario_campanha (
 -- ALTER TABLE campanha ADD FOREIGN KEY(id_tipo_campanha) REFERENCES tipo_campanha (id_tipo_campanha);
 -- ALTER TABLE voluntario_campanha ADD FOREIGN KEY(id_campanha) REFERENCES campanha (id_campanha);
 -- ALTER TABLE voluntario_campanha ADD FOREIGN KEY(id_usuario) REFERENCES usuario (id_usuario);
-
-----------------------FIM-----------------------------

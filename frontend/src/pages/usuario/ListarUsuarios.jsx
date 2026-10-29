@@ -3,17 +3,18 @@ import { Link } from "react-router-dom";
 import { UserPlus, Pencil, Trash2, ArrowLeft } from "lucide-react";
 import Header from "../../components/header";
 
+const API = "http://127.0.0.1:8000";
+
 function ListarUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Usar AbortController previne atualizações em componentes desmontados
     const controller = new AbortController();
 
     async function carregarUsuarios() {
       try {
-        const response = await fetch("http://localhost:8000/usuarios", {
+        const response = await fetch(`${API}/usuarios`, {
           signal: controller.signal,
         });
 
@@ -34,7 +35,6 @@ function ListarUsuarios() {
     }
 
     carregarUsuarios();
-
     return () => controller.abort();
   }, []);
 
@@ -46,7 +46,7 @@ function ListarUsuarios() {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/usuarios/${id}`, {
+      const response = await fetch(`${API}/usuarios/${id}`, {
         method: "DELETE",
       });
 

@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil, AlertCircle } from "lucide-react";
 import { maskCPF, maskCelular } from "../../../js/validador";
+
+const API = "http://127.0.0.1:8000";
 
 function EditarUsuario() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+  const [erroCarregar, setErroCarregar] = useState("");
+  const [erroSalvar, setErroSalvar] = useState("");
   const [formUser, setFormUser] = useState({
     nome: "",
     cpf: "",
@@ -16,15 +21,22 @@ function EditarUsuario() {
     data_nascimento: "",
     celular: "",
     voluntario: false,
-    representante_ong: false,
   });
 
+  // ----------------------------------------------------------
+  // GET — carrega o usuário
+  // ----------------------------------------------------------
   useEffect(() => {
     const carregarUsuario = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/usuarios/${id}`);
+        console.log(`[EditarUsuario] GET ${API}/usuarios/${id}`);
+        const response = await fetch(`${API}/usuarios/${id}`);
+        console.log(`[EditarUsuario] Status GET: ${response.status}`);
+
         if (response.ok) {
           const data = await response.json();
+          console.log("[EditarUsuario] Dados recebidos:", data);
+
           setFormUser({
             nome: data.nome || "",
             cpf: data.cpf || "",
@@ -34,57 +46,96 @@ function EditarUsuario() {
             data_nascimento: data.data_nascimento || "",
             celular: data.celular || "",
             voluntario: Boolean(data.voluntario),
-            representante_ong: Boolean(data.representante_ong),
           });
         } else {
-          alert("Usuário não encontrado.");
-          navigate("/usuarios");
+          const err = await response.json().catch(() => ({}));
+          const msg =
+            typeof err.detail === "string"
+              ? err.detail
+              : JSON.stringify(err.detail || err);
+          setErroCarregar(
+            `Erro ${response.status}: ${msg || "Usuário não encontrado."}`,
+          );
         }
       } catch (error) {
-        console.error("Erro na busca:", error);
-        alert("Não foi possível carregar os dados.");
+        console.error("[EditarUsuario] Erro GET:", error);
+        setErroCarregar(
+          `Não foi possível conectar ao servidor em ${API}. Verifique se o backend está rodando.`,
+        );
       } finally {
         setLoading(false);
       }
     };
     carregarUsuario();
-  }, [id, navigate]);
+  }, [id]);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    let formattedValue = type === "checkbox" ? checked : value;
-
-    if (name === "cpf") formattedValue = maskCPF(value);
-    if (name === "celular") formattedValue = maskCelular(value);
-
-    setFormUser((prev) => ({ ...prev, [name]: formattedValue }));
-  };
-
+  // ----------------------------------------------------------
+  // PUT — salva alterações
+  // ----------------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSalvando(true);
+    setErroSalvar("");
+
+    const payload = {
+      nome: formUser.nome,
+      cpf: formUser.cpf,
+      endereco: formUser.endereco,
+      estado_civil: formUser.estado_civil,
+      email: formUser.email,
+      data_nascimento: formUser.data_nascimento,
+      celular: formUser.celular,
+      voluntario: formUser.voluntario,
+    };
 
     try {
-      const response = await fetch(`http://localhost:8000/usuarios/${id}`, {
+      console.log(`[EditarUsuario] PUT ${API}/usuarios/${id}`, payload);
+      const response = await fetch(`${API}/usuarios/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formUser),
+        body: JSON.stringify(payload),
       });
+      console.log(`[EditarUsuario] Status PUT: ${response.status}`);
 
       if (response.ok) {
         alert("Usuário atualizado com sucesso!");
         navigate("/usuarios");
-      } else {
-        const errorData = await response.json();
-        alert(
-          `Erro ao atualizar: ${errorData.detail || "Falha na requisição"}`,
-        );
+        return;
       }
+
+      const err = await response.json().catch(() => ({}));
+      let msg = "Falha ao salvar";
+      if (typeof err.detail === "string") {
+        msg = err.detail;
+      } else if (Array.isArray(err.detail)) {
+        msg = err.detail
+          .map((x) => `${x.loc?.join(".") || "campo"}: ${x.msg}`)
+          .join(", ");
+      } else if (err.detail) {
+        msg = JSON.stringify(err.detail);
+      }
+      setErroSalvar(`Erro ${response.status}: ${msg}`);
     } catch (error) {
-      console.error("Erro ao atualizar:", error);
-      alert("Não foi possível conectar ao servidor.");
+      console.error("[EditarUsuario] Erro PUT:", error);
+      setErroSalvar(
+        `Não foi possível conectar ao servidor em ${API}. Verifique se o backend está rodando.`,
+      );
+    } finally {
+      setSalvando(false);
     }
   };
 
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    let v = type === "checkbox" ? checked : value;
+    if (name === "cpf") v = maskCPF(value);
+    if (name === "celular") v = maskCelular(value);
+    setFormUser((prev) => ({ ...prev, [name]: v }));
+  };
+
+  // ----------------------------------------------------------
+  // Tela de loading
+  // ----------------------------------------------------------
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -95,6 +146,44 @@ function EditarUsuario() {
     );
   }
 
+  // ----------------------------------------------------------
+  // Tela de erro ao carregar (GET falhou)
+  // ----------------------------------------------------------
+  if (erroCarregar && !formUser.nome) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl border border-red-200 shadow-sm p-6 text-center">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <AlertCircle className="w-6 h-6 text-red-600" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-800 mb-2">
+            Não foi possível carregar
+          </h2>
+          <p className="text-sm text-slate-600 mb-4 break-words">
+            {erroCarregar}
+          </p>
+          <div className="flex gap-2">
+            <Link
+              to="/usuarios"
+              className="flex-1 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all"
+            >
+              Voltar
+            </Link>
+            <button
+              onClick={() => window.location.reload()}
+              className="flex-1 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all cursor-pointer"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ----------------------------------------------------------
+  // Formulário
+  // ----------------------------------------------------------
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
@@ -111,10 +200,20 @@ function EditarUsuario() {
             <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
               <Pencil className="w-6 h-6" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-800">
-              Editar Usuário
-            </h1>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800">
+                Editar Usuário
+              </h1>
+              <p className="text-xs text-slate-500">ID #{id}</p>
+            </div>
           </div>
+
+          {erroSalvar && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span className="break-words">{erroSalvar}</span>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -235,17 +334,6 @@ function EditarUsuario() {
                 />
                 Desejo ser Voluntário
               </label>
-
-              <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  name="representante_ong"
-                  checked={formUser.representante_ong}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-                />
-                Sou Representante de ONG
-              </label>
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex gap-3">
@@ -257,9 +345,10 @@ function EditarUsuario() {
               </Link>
               <button
                 type="submit"
-                className="w-1/2 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
+                disabled={salvando}
+                className="w-1/2 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Salvar Alterações
+                {salvando ? "Salvando..." : "Salvar Alterações"}
               </button>
             </div>
           </form>
