@@ -19,6 +19,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { uploadImageToImgBB } from "../../services/imgbb.js";
+import Header from "../../components/header.jsx"
 
 function DetalhesCampanha() {
   const { id_campanha } = useParams();
@@ -198,8 +199,9 @@ function DetalhesCampanha() {
     meta > 0 ? Math.min(100, Math.round((atual / meta) * 100)) : 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-8">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen bg-slate-50 px-4 py-0">
+      <Header/>
+      <div className="max-w-5xl mx-auto space-y-6 py-5">
         {/* Navegação e Ações */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <Link

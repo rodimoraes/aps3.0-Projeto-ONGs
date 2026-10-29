@@ -16,6 +16,7 @@ import {
   Eye,
   Lock,
 } from "lucide-react";
+import Header from "../../components/header.jsx"
 
 function DetalhesOng() {
   const { id_ong } = useParams();
@@ -130,8 +131,9 @@ function DetalhesOng() {
   const campanhasAtivas = campanhas.filter((c) => c.status === "ativa").length;
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-8">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-slate-50 px-4 py-0">
+      <Header />
+      <div className="max-w-6xl mx-auto space-y-6 py-5">
         {/* Navegação Superior */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <button

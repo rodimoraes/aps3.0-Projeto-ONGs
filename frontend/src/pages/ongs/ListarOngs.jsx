@@ -12,7 +12,7 @@ import {
   MapPin,
   Phone,
 } from "lucide-react";
-
+import Header from "../../components/header.jsx"
 function ListarOngs() {
   const navigate = useNavigate();
   const [ongs, setOngs] = useState([]);
@@ -92,8 +92,9 @@ function ListarOngs() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-slate-50 px-4 py-0">
+      < Header/>
+      <div className="max-w-6xl mx-auto py-5">
         <Link
           to="/"
           className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-700 font-medium text-sm mb-6 transition-colors"

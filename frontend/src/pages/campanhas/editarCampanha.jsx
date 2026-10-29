@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import Header from "../../components/header.jsx"
 function EditarCampanha() {
   const { id_campanha } = useParams();
   const navigate = useNavigate();
@@ -96,8 +97,9 @@ function EditarCampanha() {
     );
   }
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-8">
-      <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xs border border-slate200 p-6 sm:p-8">
+    <div className="min-h-screen bg-slate-50 px-4 py-0">
+      <Header />
+      <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xs border border-slate-200 p-6 py-5 sm:p-8">
         <Link
           to={`/campanhas/${id_campanha}`}
           className="inline-flex items-center gap-2 text-slate-600 hover:text-emerald-700

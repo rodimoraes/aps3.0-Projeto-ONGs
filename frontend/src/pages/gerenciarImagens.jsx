@@ -7,6 +7,7 @@ import {
   Trash2,
   Link as LinkIcon,
 } from "lucide-react";
+import Header from "../components/header.jsx"
 
 function GerenciarImagens() {
   const { id_ong } = useParams();
@@ -122,8 +123,9 @@ function GerenciarImagens() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-slate-50 px-4 py-0">
+      <Header/>
+      <div className="max-w-4xl mx-auto py-5">
         {/* Navegação */}
         <Link
           to="/ongs"

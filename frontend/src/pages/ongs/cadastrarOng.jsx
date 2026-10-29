@@ -8,6 +8,7 @@ import {
   Check,
   X,
 } from "lucide-react";
+import Header from "../../components/header.jsx";
 import { uploadImageToImgBB } from "../../services/imgbb.js";
 import {
   maskCelular,
@@ -239,7 +240,8 @@ function CadastrarOng() {
   if (!usuarioLogado) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-8">
+    <div className="min-h-screen bg-slate-50 px-4 py-0">
+      <Header/>
       <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xs border border-slate-200 p-6 sm:p-8">
         <Link
           to="/ongs"

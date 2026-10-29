@@ -19,6 +19,7 @@ import {
   verificarForcaSenha,
   montarEndereco,
 } from "../../../js/validador";
+import Header from "../../components/header.jsx"
 
 const ESTADOS_CIVIS = ["solteiro", "casado", "divorciado", "viuvo"];
 const UFS =
@@ -305,8 +306,9 @@ function CadastrarUsuario() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-slate-50 py-0 px-4">
+       <Header/>
+      <div className="max-w-2xl mx-auto py-5">
         <Link
           to="/usuarios"
           className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-700 font-medium mb-6"

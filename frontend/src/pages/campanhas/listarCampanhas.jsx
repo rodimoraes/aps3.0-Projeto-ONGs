@@ -10,6 +10,7 @@ import {
   DollarSign,
   Eye
 } from "lucide-react";
+import Header from "../../components/header.jsx"
 function ListarCampanhas() {
   const { id_ong } = useParams(); // Pega o ID da ONG vindo da URL
   const [ong, setOng] = useState(null);
@@ -77,8 +78,9 @@ function ListarCampanhas() {
     );
   }
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-slate-50 px-4 py-0">
+      <Header/>
+      <div className="max-w-4xl mx-auto py-5">
         {/* Navegação */}
         <div className="flex items-center justify-between mb-6">
           <Link
