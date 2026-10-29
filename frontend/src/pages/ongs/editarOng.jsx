@@ -1,8 +1,42 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Image as ImageIcon, Loader2 } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, Loader2, Check, X } from "lucide-react";
 import { uploadImageToImgBB } from "../../services/imgbb.js";
-import { maskCelular, validarCelular } from "../../../js/validador";
+import {
+  maskCelular,
+  maskCEP,
+  validarCelular,
+  buscarCEP,
+  montarEndereco,
+  parseEndereco,
+} from "../../../js/validador";
+
+const UFS =
+  "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(
+    " ",
+  );
+const inputCls =
+  "w-full px-3.5 py-2 rounded-xl border text-slate-800 text-xs focus:outline-none focus:ring-2 transition-all";
+const corBorda = {
+  valid: "border-green-500 focus:ring-green-500/30",
+  invalid: "border-red-400 focus:ring-red-500/30",
+  loading: "border-blue-400 focus:ring-blue-500/30",
+  idle: "border-slate-300 focus:ring-blue-500/30",
+};
+
+function Icone({ status }) {
+  if (status === "loading")
+    return (
+      <Loader2 className="absolute right-3 top-2.5 w-4 h-4 text-blue-500 animate-spin" />
+    );
+  if (status === "valid" || status === "found")
+    return (
+      <Check className="absolute right-3 top-2.5 w-4 h-4 text-green-600" />
+    );
+  if (status === "invalid")
+    return <X className="absolute right-3 top-2.5 w-4 h-4 text-red-600" />;
+  return null;
+}
 
 function EditarOng() {
   const { id } = useParams();
@@ -16,7 +50,13 @@ function EditarOng() {
     banner_url: "",
     id_categoria: "1",
     telefone: "",
-    endereco: "",
+    cep: "",
+    logradouro: "",
+    numero: "",
+    complemento: "",
+    bairro: "",
+    cidade: "",
+    estado: "",
     denominacao_social: "",
     sigla: "",
     objetivo_social_finalidade: "",
@@ -28,6 +68,11 @@ function EditarOng() {
   const [loading, setLoading] = useState(true);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [cepStatus, setCepStatus] = useState({ status: "idle", msg: "" });
+  const [telefoneStatus, setTelefoneStatus] = useState({
+    status: "idle",
+    msg: "",
+  });
 
   useEffect(() => {
     if (!usuarioLogado) {
@@ -42,12 +87,14 @@ function EditarOng() {
         if (response.ok) {
           const data = await response.json();
 
-          // Verifica permissão
           if (data.id_usuario_representante !== usuarioLogado.id_usuario) {
             alert("Você não tem permissão para editar esta ONG.");
             navigate("/ongs");
             return;
           }
+
+          // ---- PARSE REVERSO DO ENDEREÇO ----
+          const enderecoCampos = parseEndereco(data.endereco || "");
 
           setFormOng({
             nome: data.nome || "",
@@ -55,7 +102,7 @@ function EditarOng() {
             banner_url: data.banner_url || "",
             id_categoria: String(data.id_categoria ?? "1"),
             telefone: data.telefone ? maskCelular(String(data.telefone)) : "",
-            endereco: data.endereco || "",
+            ...enderecoCampos,
             denominacao_social: data.denominacao_social || "",
             sigla: data.sigla || "",
             objetivo_social_finalidade: data.objetivo_social_finalidade || "",
@@ -80,10 +127,53 @@ function EditarOng() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormOng((prev) => ({
-      ...prev,
-      [name]: name === "telefone" ? maskCelular(value) : value,
-    }));
+    let v = value;
+    if (name === "telefone") {
+      v = maskCelular(value);
+      setTelefoneStatus({ status: "idle", msg: "" });
+    } else if (name === "cep") {
+      v = maskCEP(value);
+      setCepStatus({ status: "idle", msg: "" });
+    } else if (name === "estado") {
+      v = value.toUpperCase();
+    }
+    setFormOng((prev) => ({ ...prev, [name]: v }));
+  };
+
+  const validarTelefone = () => {
+    if (!formOng.telefone.replace(/\D/g, "")) return;
+    const r = validarCelular(formOng.telefone);
+    setTelefoneStatus(
+      r.valid
+        ? { status: "valid", msg: "Telefone válido." }
+        : { status: "invalid", msg: r.error || "Telefone inválido." },
+    );
+  };
+
+  const buscarCep = async () => {
+    const d = formOng.cep.replace(/\D/g, "");
+    if (!d) return;
+    if (d.length !== 8) {
+      setCepStatus({ status: "invalid", msg: "CEP incompleto (8 dígitos)." });
+      return;
+    }
+    setCepStatus({ status: "loading", msg: "Buscando CEP..." });
+    try {
+      const data = await buscarCEP(formOng.cep);
+      setFormOng((p) => ({
+        ...p,
+        logradouro: data.logradouro || p.logradouro,
+        bairro: data.bairro || p.bairro,
+        cidade: data.localidade || p.cidade,
+        estado: data.uf || p.estado,
+      }));
+      setCepStatus({
+        status: "found",
+        msg: "Endereço preenchido automaticamente.",
+      });
+    } catch (err) {
+      setCepStatus({ status: "invalid", msg: err.message });
+    }
   };
 
   const handleLogoUpload = async (e) => {
@@ -130,7 +220,7 @@ function EditarOng() {
       banner_url: formOng.banner_url || null,
       id_categoria: Number(formOng.id_categoria),
       telefone: formOng.telefone,
-      endereco: formOng.endereco,
+      endereco: montarEndereco(formOng), // <-- RE-MONTA A STRING
       denominacao_social: formOng.denominacao_social,
       sigla: formOng.sigla || null,
       objetivo_social_finalidade: formOng.objetivo_social_finalidade,
@@ -183,6 +273,7 @@ function EditarOng() {
         <h1 className="text-2xl font-bold text-slate-800 mb-6">Editar ONG</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Uploads */}
           <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100 space-y-4">
             <h2 className="text-xs font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
               <ImageIcon className="w-4 h-4 text-purple-600" />
@@ -242,6 +333,7 @@ function EditarOng() {
             </div>
           </div>
 
+          {/* Dados cadastrais */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -253,7 +345,7 @@ function EditarOng() {
                 value={formOng.nome}
                 onChange={handleChange}
                 required
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className={inputCls + " border-slate-300"}
               />
             </div>
             <div>
@@ -266,7 +358,7 @@ function EditarOng() {
                 value={formOng.denominacao_social}
                 onChange={handleChange}
                 required
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className={inputCls + " border-slate-300"}
               />
             </div>
           </div>
@@ -280,7 +372,7 @@ function EditarOng() {
                 name="id_categoria"
                 value={formOng.id_categoria}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className={inputCls + " border-slate-300 bg-white"}
               >
                 <option value={1}>Educação / Assistência</option>
                 <option value={2}>Meio Ambiente</option>
@@ -297,38 +389,169 @@ function EditarOng() {
                 name="sigla"
                 value={formOng.sigla}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className={inputCls + " border-slate-300"}
               />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Telefone <span className="text-red-500">*</span>
               </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  name="telefone"
+                  value={formOng.telefone}
+                  onChange={handleChange}
+                  onBlur={validarTelefone}
+                  required
+                  placeholder="(00) 00000-0000"
+                  className={
+                    inputCls +
+                    " " +
+                    (corBorda[telefoneStatus.status] || corBorda.idle)
+                  }
+                />
+                <Icone status={telefoneStatus.status} />
+              </div>
+              {telefoneStatus.msg && (
+                <p
+                  className={`text-[11px] mt-1 ${
+                    telefoneStatus.status === "valid"
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {telefoneStatus.msg}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* ---- ENDEREÇO EM CAMPOS SEPARADOS ---- */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              CEP <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
               <input
                 type="text"
-                name="telefone"
-                value={formOng.telefone}
+                name="cep"
+                value={formOng.cep}
+                onChange={handleChange}
+                onBlur={buscarCep}
+                required
+                placeholder="00000-000"
+                className={
+                  inputCls + " " + (corBorda[cepStatus.status] || corBorda.idle)
+                }
+              />
+              <Icone status={cepStatus.status} />
+            </div>
+            {cepStatus.msg && (
+              <p
+                className={`text-[11px] mt-1 ${
+                  cepStatus.status === "found"
+                    ? "text-green-600"
+                    : "text-red-600"
+                }`}
+              >
+                {cepStatus.msg}
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Logradouro <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="logradouro"
+                value={formOng.logradouro}
                 onChange={handleChange}
                 required
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className={inputCls + " border-slate-300"}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Número <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="numero"
+                value={formOng.numero}
+                onChange={handleChange}
+                required
+                className={inputCls + " border-slate-300"}
               />
             </div>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Endereço <span className="text-red-500">*</span>
+              Complemento
             </label>
             <input
               type="text"
-              name="endereco"
-              value={formOng.endereco}
+              name="complemento"
+              value={formOng.complemento}
               onChange={handleChange}
-              required
-              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              placeholder="Apto, bloco..."
+              className={inputCls + " border-slate-300"}
             />
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Bairro <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="bairro"
+                value={formOng.bairro}
+                onChange={handleChange}
+                required
+                className={inputCls + " border-slate-300"}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Cidade <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="cidade"
+                value={formOng.cidade}
+                onChange={handleChange}
+                required
+                className={inputCls + " border-slate-300"}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                UF <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="estado"
+                value={formOng.estado}
+                onChange={handleChange}
+                required
+                className={inputCls + " border-slate-300 bg-white"}
+              >
+                <option value="">--</option>
+                {UFS.map((u) => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Objetivo e demais campos */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Objetivo Social <span className="text-red-500">*</span>
@@ -339,7 +562,7 @@ function EditarOng() {
               value={formOng.objetivo_social_finalidade}
               onChange={handleChange}
               required
-              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              className={inputCls + " border-slate-300"}
             />
           </div>
 
@@ -354,7 +577,7 @@ function EditarOng() {
                 value={formOng.RCPJ}
                 onChange={handleChange}
                 required
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className={inputCls + " border-slate-300"}
               />
             </div>
             <div>
@@ -367,7 +590,7 @@ function EditarOng() {
                 value={formOng.CNAE}
                 onChange={handleChange}
                 required
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className={inputCls + " border-slate-300"}
               />
             </div>
             <div>
@@ -380,7 +603,7 @@ function EditarOng() {
                 value={formOng.inscricao_municipal}
                 onChange={handleChange}
                 required
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className={inputCls + " border-slate-300"}
               />
             </div>
           </div>
@@ -395,7 +618,7 @@ function EditarOng() {
               value={formOng.como_ajudar}
               onChange={handleChange}
               placeholder="Ex: Voluntariado, doações via chave PIX..."
-              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              className={inputCls + " border-slate-300"}
             />
           </div>
 

@@ -12,23 +12,23 @@ function Home() {
     {
       id: 1,
       image: "#",
-      title: "Imagem 1",
+      title: "Conecte-se com causas que transformam vidas",
       subtitle:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis.",
+        "Descubra ONGs sérias perto de você, conheça seus projetos e encontre a melhor forma de ajudar — seja doando tempo, recursos ou visibilidade.",
     },
     {
       id: 2,
       image: "#",
-      title: "Imagem 2",
+      title: "Encontre a ONG certa para você apoiar",
       subtitle:
-        "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.",
+        "Explore organizações por causa, cidade e categoria. Compare campanhas ativas, acompanhe metas e escolha quem faz sentido para o seu propósito.",
     },
     {
       id: 3,
       image: "#",
-      title: "Imagem 3",
+      title: "Sua ONG também pode estar aqui",
       subtitle:
-        "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+        "Cadastre sua organização em minutos, divulgue campanhas de arrecadação e voluntariado, e conecte-se a uma rede de pessoas prontas para ajudar.",
     },
   ];
 
@@ -76,7 +76,6 @@ function Home() {
                   const imgs = await resImg.json();
                   return {
                     ...ong,
-                    // Prioridade: galeria → banner → logo
                     imagemUrl:
                       imgs[0]?.url || ong.banner_url || ong.logo_url || null,
                   };
@@ -183,17 +182,23 @@ function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <h2 className="text-3xl font-extrabold mb-4">
-              Texto sobre ONGs / o que é uma ONG e sua importância
+              O que é uma ONG e por que ela importa?
             </h2>
             <p className="text-blue-100 mb-4 leading-relaxed">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras nec
-              ex hendrerit, placerat libero at, finibus diam. Vivamus nec dui
-              nec elit vestibulum dapibus.
+              Organizações Não Governamentais (ONGs) são entidades da sociedade
+              civil, sem fins lucrativos, que atuam em causas de interesse
+              público — como educação, saúde, meio ambiente, cultura e
+              assistência social. Elas existem para suprir demandas que o Estado
+              sozinho não consegue atender, mobilizando recursos, voluntários e
+              parcerias em favor de quem mais precisa.
             </p>
             <p className="text-blue-200 mb-6 leading-relaxed">
-              Quisque vulputate sodales porta. Donec hendrerit ante sit amet
-              euismod scelerisque. Fusce sed elit sodales, aliquet quam non,
-              vestibulum leo.
+              Apoiar uma ONG é transformar intenção em impacto real. Cada
+              doação, cada hora de voluntariado e cada compartilhamento
+              fortalecem redes de solidariedade que mudam a vida de milhares de
+              pessoas todos os dias. Aqui no EncontreONG, acreditamos que
+              aproximar pessoas de causas é o primeiro passo para uma sociedade
+              mais justa.
             </p>
           </div>
           <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-blue-700/50">
@@ -229,7 +234,6 @@ function Home() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {ongsDestaque.map((ong) => {
-              // Prioridade: galeria → banner → logo → placeholder
               const imagemBase =
                 ong.imagemUrl || ong.banner_url || ong.logo_url || PLACEHOLDER;
               return (
@@ -294,14 +298,17 @@ function Home() {
               Como o EncontreONG Funciona?
             </h2>
             <p className="text-blue-100 mb-4 leading-relaxed">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras nec
-              ex hendrerit, placerat libero at, finibus diam. Vivamus nec dui
-              nec elit vestibulum dapibus.
+              O EncontreONG é uma ponte entre quem quer ajudar e quem precisa de
+              ajuda. Reunimos em um só lugar organizações sociais de diferentes
+              causas, com informações claras sobre cada projeto, campanhas
+              ativas, metas de arrecadação e formas de voluntariado.
             </p>
             <p className="text-blue-200 mb-6 leading-relaxed">
-              Quisque vulputate sodales porta. Donec hendrerit ante sit amet
-              euismod scelerisque. Fusce sed elit sodales, aliquet quam non,
-              vestibulum leo.
+              É simples: explore as ONGs por categoria ou cidade, conheça as
+              campanhas em andamento, inscreva-se como voluntário ou apoie
+              financeiramente a causa que mais combina com você. Se você
+              representa uma ONG, cadastre sua organização e comece a divulgar
+              suas ações para uma rede engajada de doadores e voluntários.
             </p>
             <div className="flex gap-4">
               <Link

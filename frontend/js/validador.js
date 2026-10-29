@@ -217,3 +217,71 @@ export const montarEndereco = (e = {}) => {
   if (e.cep) partes.push(`CEP ${e.cep}`);
   return partes.join(" - ");
 };
+
+// =============================================================
+// PARSE REVERSO — desmonta a string de endereço em campos
+// Compatível com o formato gerado por montarEndereco()
+// =============================================================
+export const parseEndereco = (endereco = "") => {
+  const vazio = {
+    cep: "",
+    logradouro: "",
+    numero: "",
+    complemento: "",
+    bairro: "",
+    cidade: "",
+    estado: "",
+  };
+  if (!endereco || typeof endereco !== "string") return vazio;
+
+  // 1) Extrai o CEP no final: "CEP 00000-000"
+  let resto = endereco.trim();
+  let cep = "";
+  const cepMatch = resto.match(/-\s*CEP\s*([\d-]{8,9})\s*$/i);
+  if (cepMatch) {
+    cep = cepMatch[1];
+    resto = resto.slice(0, cepMatch.index).trim();
+    // remove o " - " que sobrou antes do CEP
+    resto = resto.replace(/\s*-\s*$/, "").trim();
+  }
+
+  // 2) Extrai "Cidade/UF" no final
+  let cidade = "";
+  let estado = "";
+  const cidadeUfMatch = resto.match(/([A-Za-zÀ-ú\s.]+)\/([A-Z]{2})\s*$/);
+  if (cidadeUfMatch) {
+    cidade = cidadeUfMatch[1].trim();
+    estado = cidadeUfMatch[2];
+    resto = resto.slice(0, cidadeUfMatch.index).trim();
+    resto = resto.replace(/\s*-\s*$/, "").trim();
+  }
+
+  // 3) O que sobrou: "Logradouro, N - Complemento - Bairro"
+  // O bairro é o último segmento após " - "
+  let bairro = "";
+  let logradouroNumCompl = resto;
+  const partes = resto.split(" - ");
+  if (partes.length >= 2) {
+    bairro = partes[partes.length - 1].trim();
+    logradouroNumCompl = partes.slice(0, -1).join(" - ").trim();
+  }
+
+  // 4) Separa "Logradouro, N - Complemento"
+  let logradouro = "";
+  let numero = "";
+  let complemento = "";
+  // formato: "Rua X, 100" ou "Rua X, 100 - Apto 2"
+  const compMatch = logradouroNumCompl.match(
+    /^(.+?),\s*([^-]+?)\s*(?:-\s*(.+))?$/,
+  );
+  if (compMatch) {
+    logradouro = compMatch[1].trim();
+    numero = compMatch[2].trim();
+    complemento = (compMatch[3] || "").trim();
+  } else {
+    // fallback: só logradouro
+    logradouro = logradouroNumCompl;
+  }
+
+  return { cep, logradouro, numero, complemento, bairro, cidade, estado };
+};

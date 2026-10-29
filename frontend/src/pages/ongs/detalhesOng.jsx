@@ -16,7 +16,8 @@ import {
   Eye,
   Lock,
 } from "lucide-react";
-import Header from "../../components/header.jsx"
+import Header from "../../components/header.jsx";
+import MapaEndereco from "../../components/mapaEndereco";
 
 function DetalhesOng() {
   const { id_ong } = useParams();
@@ -536,6 +537,22 @@ function DetalhesOng() {
               })}
             </div>
           )}
+        </div>
+        {/* Mapa de Localização */}
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-red-500" />
+              Localização
+            </h2>
+            {ong?.endereco && (
+              <span className="text-xs text-slate-500 truncate max-w-xs">
+                {ong.endereco}
+              </span>
+            )}
+          </div>
+
+          <MapaEndereco endereco={ong?.endereco} nomeOng={ong?.nome} />
         </div>
       </div>
     </div>
