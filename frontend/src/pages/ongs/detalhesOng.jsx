@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Header from "../../components/header.jsx";
 import MapaEndereco from "../../components/mapaEndereco";
+import ModalImagem from "../../components/ModalImagem";
 
 function DetalhesOng() {
   const { id_ong } = useParams();
@@ -30,6 +31,7 @@ function DetalhesOng() {
   const [campanhas, setCampanhas] = useState([]);
   const [imagens, setImagens] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [imagemExpandida, setImagemExpandida] = useState(null);
 
   const podeEditar =
     usuarioLogado &&
@@ -391,7 +393,7 @@ function DetalhesOng() {
                         "https://via.placeholder.com/300x200?text=Foto";
                     }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex items-end">
+                  <div onClick={() => setImagemExpandida(img)} className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex items-end">
                     <p className="text-[11px] text-white font-medium line-clamp-1">
                       {img.descricao}
                     </p>
@@ -555,6 +557,10 @@ function DetalhesOng() {
           <MapaEndereco endereco={ong?.endereco} nomeOng={ong?.nome} />
         </div>
       </div>
+        <ModalImagem
+        imagem={imagemExpandida}
+        onClose={() => setImagemExpandida(null)}
+      />
     </div>
   );
 }
