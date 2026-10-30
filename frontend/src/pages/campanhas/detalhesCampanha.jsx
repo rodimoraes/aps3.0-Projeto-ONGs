@@ -19,7 +19,8 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { uploadImageToImgBB } from "../../services/imgbb.js";
-import Header from "../../components/header.jsx"
+import Header from "../../components/header.jsx";
+import ModalImagem from "../../components/ModalImagem";
 
 function DetalhesCampanha() {
   const { id_campanha } = useParams();
@@ -34,7 +35,8 @@ function DetalhesCampanha() {
   const [novaImagem, setNovaImagem] = useState({ url: "", descricao: "" });
   const [uploadingFoto, setUploadingFoto] = useState(false);
   const usuarioLogado = JSON.parse(localStorage.getItem("usuario") || "null");
-
+  const [imagemExpandida, setImagemExpandida] = useState(null);
+  
   useEffect(() => {
     const carregarDados = async () => {
       try {
@@ -200,7 +202,7 @@ function DetalhesCampanha() {
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-0">
-      <Header/>
+      <Header />
       <div className="max-w-5xl mx-auto space-y-6 py-5">
         {/* Navegação e Ações */}
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -535,13 +537,14 @@ function DetalhesCampanha() {
                   <img
                     src={img.url}
                     alt={img.descricao}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
                     onError={(e) => {
                       e.target.src =
                         "https://via.placeholder.com/300x200?text=Foto";
                     }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex items-end justify-between gap-2">
+                  <div onClick={() => setImagemExpandida(img)} className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex items-end justify-between gap-2">
                     <p className="text-[11px] text-white font-medium line-clamp-2">
                       {img.descricao}
                     </p>
@@ -559,6 +562,10 @@ function DetalhesCampanha() {
           )}
         </div>
       </div>
+      <ModalImagem
+        imagem={imagemExpandida}
+        onClose={() => setImagemExpandida(null)}
+      />
     </div>
   );
 }
