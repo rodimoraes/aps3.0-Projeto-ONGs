@@ -24,6 +24,8 @@ import ListarCampanhas from "./pages/campanhas/listarCampanhas";
 import CadastrarCampanha from "./pages/campanhas/cadastrarCampanha";
 import EditarCampanha from "./pages/campanhas/editarCampanha";
 
+import DashboardOng from "./pages/dashboard/dashboardOng";
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
@@ -31,18 +33,14 @@ createRoot(document.getElementById("root")).render(
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-
         <Route path="/explorar-ongs" element={<ExplorarOngs />} />
-
         <Route path="/cadastrar-ong" element={<CadastrarOng />} />
         <Route path="/ongs" element={<ListarOngs />} />
         <Route path="/editar-ong/:id" element={<EditarOng />} />
         <Route path="/ongs/:id_ong" element={<DetalhesOng />} />
-
         <Route path="/cadastrar-usuario" element={<CadastrarUsuario />} />
         <Route path="/usuarios" element={<ListarUsuarios />} />
         <Route path="/editar-usuario/:id" element={<EditarUsuario />} />
-
         <Route path="/ongs/:id_ong/campanhas" element={<ListarCampanhas />} />
         <Route
           path="/ongs/:id_ong/campanhas/cadastrar"
@@ -54,6 +52,7 @@ createRoot(document.getElementById("root")).render(
         />
         <Route path="/campanhas/:id_campanha" element={<DetalhesCampanha />} />
         <Route path="/ongs/:id_ong/imagens" element={<GerenciarImagens />} />
+        <Route path="/ongs/:id_ong/dashboard" element={<DashboardOng />} />{" "}
       </Routes>
     </BrowserRouter>
   </StrictMode>,

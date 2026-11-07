@@ -248,3 +248,64 @@ def listar_voluntarios_campanha(id_campanha: int):
         return voluntarios
     except mysql.connector.Error as err:
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
+    
+# 9. DASHBOARD DA ONG - Métricas consolidadas por tipo e status
+@router.get("/ong/{id_ong}/dashboard")
+def buscar_dashboard_ong(id_ong: int):
+    try:
+        conexao = get_db_connection()
+        cursor = conexao.cursor(dictionary=True)
+
+        # Busca todas as campanhas da ONG com o nome do tipo
+        sql = """
+        SELECT
+            c.id_campanha,
+            c.titulo,
+            c.id_tipo_campanha,
+            t.nome AS tipo_nome,
+            c.meta_arrecadacao,
+            c.valor_arrecadado,
+            c.status,
+            c.data_inicio,
+            c.data_fim,
+            (SELECT COUNT(*) FROM voluntario_campanha v WHERE v.id_campanha = c.id_campanha) AS total_voluntarios
+        FROM campanha c
+        LEFT JOIN tipo_campanha t ON c.id_tipo_campanha = t.id_tipo_campanha
+        WHERE c.id_ong = %s
+        ORDER BY c.id_campanha DESC
+        """
+        cursor.execute(sql, (id_ong,))
+        campanhas = cursor.fetchall()
+        cursor.close()
+        conexao.close()
+
+        # Consolidação dos Indicadores (KPIs)
+        total_campanhas = len(campanhas)
+        ativas = sum(1 for c in campanhas if c["status"] == "ativa")
+        encerradas = sum(1 for c in campanhas if c["status"] in ["concluida", "cancelada"])
+
+        # Campanhas por Tipo
+        arrecadacao = [c for c in campanhas if c["id_tipo_campanha"] == 1]
+        voluntariado = [c for c in campanhas if c["id_tipo_campanha"] == 2]
+
+        meta_financeira_total = sum(float(c["meta_arrecadacao"] or 0) for c in arrecadacao)
+        total_arrecadado = sum(float(c["valor_arrecadado"] or 0) for c in arrecadacao)
+        meta_voluntarios_total = sum(int(c["meta_arrecadacao"] or 0) for c in voluntariado)
+        total_voluntarios_inscritos = sum(int(c["total_voluntarios"] or 0) for c in voluntariado)
+
+        return {
+            "resumo": {
+                "total_campanhas": total_campanhas,
+                "ativas": ativas,
+                "encerradas": encerradas,
+                "total_arrecadacao": len(arrecadacao),
+                "total_voluntariado": len(voluntariado),
+                "meta_financeira_total": meta_financeira_total,
+                "total_arrecadado": total_arrecadado,
+                "meta_voluntarios_total": meta_voluntarios_total,
+                "total_voluntarios_inscritos": total_voluntarios_inscritos,
+            },
+            "campanhas": campanhas,
+        }
+    except mysql.connector.Error as err:
+        raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")

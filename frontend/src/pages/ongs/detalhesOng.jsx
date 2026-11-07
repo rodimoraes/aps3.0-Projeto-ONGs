@@ -15,6 +15,7 @@ import {
   FileText,
   Eye,
   Lock,
+  BarChart3,
 } from "lucide-react";
 import Header from "../../components/header.jsx";
 import MapaEndereco from "../../components/mapaEndereco";
@@ -171,6 +172,13 @@ function DetalhesOng() {
               >
                 <Plus className="w-4 h-4" />
                 <span>Nova Campanha</span>
+              </Link>
+              <Link
+                to={`/ongs/${id_ong}/dashboard`}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-purple-700 hover:bg-purple-700 rounded-xl transition-all shadow-sm"
+              >
+                <BarChart3 className="w-4 h-4 text-white" />
+                <span>Dashboard</span>
               </Link>
             </div>
           ) : (
@@ -393,7 +401,10 @@ function DetalhesOng() {
                         "https://via.placeholder.com/300x200?text=Foto";
                     }}
                   />
-                  <div onClick={() => setImagemExpandida(img)} className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex items-end">
+                  <div
+                    onClick={() => setImagemExpandida(img)}
+                    className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex items-end"
+                  >
                     <p className="text-[11px] text-white font-medium line-clamp-1">
                       {img.descricao}
                     </p>
@@ -557,7 +568,7 @@ function DetalhesOng() {
           <MapaEndereco endereco={ong?.endereco} nomeOng={ong?.nome} />
         </div>
       </div>
-        <ModalImagem
+      <ModalImagem
         imagem={imagemExpandida}
         onClose={() => setImagemExpandida(null)}
       />

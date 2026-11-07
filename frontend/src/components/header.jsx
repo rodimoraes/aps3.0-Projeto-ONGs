@@ -28,10 +28,10 @@ justify-between"
 hover:text-blue-600 transition-colors"
           >
             <img
-            src="/EncontreONG.png"
-            alt="Logo Encontre ONG"
-            className="h-8 sm:h-7 w-auto object-contain transition-transform group-hover:scale-105"
-          />
+              src="/EncontreONG.png"
+              alt="Logo Encontre ONG"
+              className="h-8 sm:h-7 w-auto object-contain transition-transform group-hover:scale-105"
+            />
           </Link>
         </div>
         {/* 2. NAVEGAÇÃO DESKTOP (Centralizada e com espaçamento ampliado entre os botões)
