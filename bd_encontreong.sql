@@ -3,7 +3,7 @@
 
 -- COLOCAR O VOLUNTARIO E O REPRESENTANTE_ONG COMO DEFAULT FALSE OU 0
 
-drop database bd_encontreong;
+DROP DATABASE IF EXISTS bd_encontreong;
 
 create database bd_encontreong;
 use bd_encontreong;
@@ -33,14 +33,14 @@ banner_url VARCHAR(500),
 id_usuario_representante INT,  
 id_categoria INT NOT NULL,  
 telefone VARCHAR(20),  
-endereco VARCHAR(100),  
+endereco VARCHAR(600),  
 denominacao_social VARCHAR(100) NOT NULL,  
-sigla VARCHAR(100),  
+sigla VARCHAR(10),  
 objetivo_social_finalidade VARCHAR(100) NOT NULL,  
 RCPJ VARCHAR(30) NOT NULL,  
 CNAE VARCHAR(100) NOT NULL,  
 inscricao_municipal VARCHAR(100) NOT NULL,  
-como_ajudar VARCHAR(100)  
+como_ajudar VARCHAR(250)  
 );
 
 CREATE TABLE tipo_campanha
