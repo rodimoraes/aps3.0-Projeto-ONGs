@@ -436,19 +436,6 @@ function PerfilUsuario() {
               </div>
             </div>
 
-            <div className="pt-2 flex items-center">
-              <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  name="voluntario"
-                  checked={form.voluntario}
-                  onChange={handleChange}
-                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-                />
-                Desejo ser Voluntário
-              </label>
-            </div>
-
             {/* ALTERAR SENHA */}
             <div className="pt-4 border-t border-slate-100">
               <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-slate-700 mb-3">
