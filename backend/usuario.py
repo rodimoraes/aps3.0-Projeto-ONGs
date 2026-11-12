@@ -1,7 +1,6 @@
 # backend/usuario.py
-from datetime import date
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr
 from typing import Optional
 import mysql.connector
 from dotenv import load_dotenv
@@ -29,16 +28,6 @@ def get_db_connection():
 
 
 # ============================================================
-# Helpers
-# ============================================================
-def calcular_idade(data_nasc: date) -> int:
-    hoje = date.today()
-    return hoje.year - data_nasc.year - (
-        (hoje.month, hoje.day) < (data_nasc.month, data_nasc.day)
-    )
-
-
-# ============================================================
 # Schemas
 # ============================================================
 class UsuarioSchema(BaseModel):
@@ -48,18 +37,9 @@ class UsuarioSchema(BaseModel):
     estado_civil: str
     email: EmailStr
     senha: str
-    data_nascimento: date
+    data_nascimento: str
     celular: str
     voluntario: bool = False
-
-    @field_validator("data_nascimento")
-    @classmethod
-    def validar_maioridade(cls, v: date) -> date:
-        if v > date.today():
-            raise ValueError("Data de nascimento não pode ser no futuro.")
-        if calcular_idade(v) < 18:
-            raise ValueError("É necessário ter 18 anos ou mais para se cadastrar.")
-        return v
 
 
 class UsuarioUpdateSchema(BaseModel):
@@ -68,18 +48,9 @@ class UsuarioUpdateSchema(BaseModel):
     endereco: str
     estado_civil: str
     email: EmailStr
-    data_nascimento: date
+    data_nascimento: str
     celular: str
     voluntario: bool = False
-
-    @field_validator("data_nascimento")
-    @classmethod
-    def validar_maioridade(cls, v: date) -> date:
-        if v > date.today():
-            raise ValueError("Data de nascimento não pode ser no futuro.")
-        if calcular_idade(v) < 18:
-            raise ValueError("É necessário ter 18 anos ou mais.")
-        return v
 
 
 class LoginSchema(BaseModel):
@@ -92,6 +63,10 @@ class SenhaUpdateSchema(BaseModel):
     senha_nova: str
 
 
+# ============================================================
+# Helper: valida a força da senha no backend
+# (mesmos critérios usados no frontend: 8+, maiúsc, minúsc, número, especial)
+# ============================================================
 CARACTERES_ESPECIAIS = set("!@#$%^&*(),.?\":{}|<>_-+=;'/\\[]~`")
 
 
@@ -110,7 +85,7 @@ def senha_forte(senha: str) -> bool:
 
 
 # ============================================================
-# CREATE — público (cadastro)
+# CREATE — representante_ong sempre começa como FALSE
 # ============================================================
 @router.post("")
 def cadastrar_usuario(usuario: UsuarioSchema):
@@ -142,6 +117,7 @@ def cadastrar_usuario(usuario: UsuarioSchema):
         cursor.execute(sql, valores)
         conexao.commit()
         novo_id = cursor.lastrowid
+
         cursor.close()
         conexao.close()
 
@@ -152,11 +128,6 @@ def cadastrar_usuario(usuario: UsuarioSchema):
         }
 
     except mysql.connector.Error as err:
-        if err.errno == 1062:
-            raise HTTPException(
-                status_code=400,
-                detail="CPF, e-mail ou celular já cadastrado.",
-            )
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
@@ -168,8 +139,10 @@ def login(dados: LoginSchema):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor(dictionary=True)
+
         cursor.execute("SELECT * FROM usuario WHERE email = %s", (dados.email,))
         usuario = cursor.fetchone()
+
         cursor.close()
         conexao.close()
 
@@ -177,7 +150,10 @@ def login(dados: LoginSchema):
             raise HTTPException(status_code=400, detail="E-mail ou senha incorretos.")
 
         token = criar_token_acesso(
-            data={"sub": usuario["email"], "id_usuario": usuario["id_usuario"]}
+            data={
+                "sub": usuario["email"],
+                "id_usuario": usuario["id_usuario"],
+            }
         )
 
         return {
@@ -197,7 +173,7 @@ def login(dados: LoginSchema):
 
 
 # ============================================================
-# /me
+# Rota protegida de teste
 # ============================================================
 @router.get("/me")
 def perfil_usuario_logado(usuario_atual: dict = Depends(obter_usuario_atual)):
@@ -205,21 +181,18 @@ def perfil_usuario_logado(usuario_atual: dict = Depends(obter_usuario_atual)):
 
 
 # ============================================================
-# READ ALL — RNF 02: só o próprio usuário
+# READ ALL
 # ============================================================
 @router.get("")
-def listar_usuarios(usuario_atual: dict = Depends(obter_usuario_atual)):
+def listar_usuarios():
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor(dictionary=True)
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT id_usuario, nome, cpf, endereco, estado_civil, email,
                    data_nascimento, celular, voluntario, representante_ong
-            FROM usuario WHERE id_usuario = %s
-            """,
-            (usuario_atual["id_usuario"],),
-        )
+            FROM usuario
+        """)
         usuarios = cursor.fetchall()
 
         for u in usuarios:
@@ -234,31 +207,20 @@ def listar_usuarios(usuario_atual: dict = Depends(obter_usuario_atual)):
 
 
 # ============================================================
-# READ ONE — RNF 02: só o próprio usuário
+# READ ONE
 # ============================================================
 @router.get("/{id_usuario}")
-def buscar_usuario(
-    id_usuario: int,
-    usuario_atual: dict = Depends(obter_usuario_atual),
-):
-    if usuario_atual["id_usuario"] != id_usuario:
-        raise HTTPException(
-            status_code=403,
-            detail="Você só pode acessar os seus próprios dados.",
-        )
-
+def buscar_usuario(id_usuario: int):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor(dictionary=True)
-        cursor.execute(
-            """
+        cursor.execute("""
             SELECT id_usuario, nome, cpf, endereco, estado_civil, email,
                    data_nascimento, celular, voluntario, representante_ong
             FROM usuario WHERE id_usuario = %s
-            """,
-            (id_usuario,),
-        )
+        """, (id_usuario,))
         usuario = cursor.fetchone()
+
         cursor.close()
         conexao.close()
 
@@ -274,24 +236,15 @@ def buscar_usuario(
 
 
 # ============================================================
-# UPDATE — RNF 02: só o próprio usuário
+# UPDATE — dados cadastrais (representante_ong NÃO é alterável)
 # ============================================================
 @router.put("/{id_usuario}")
-def atualizar_usuario(
-    id_usuario: int,
-    usuario: UsuarioUpdateSchema,
-    usuario_atual: dict = Depends(obter_usuario_atual),
-):
-    if usuario_atual["id_usuario"] != id_usuario:
-        raise HTTPException(
-            status_code=403,
-            detail="Você só pode editar os seus próprios dados.",
-        )
-
+def atualizar_usuario(id_usuario: int, usuario: UsuarioUpdateSchema):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor(dictionary=True)
 
+        # 1) Verifica se o usuário existe PRIMEIRO
         cursor.execute(
             "SELECT id_usuario FROM usuario WHERE id_usuario = %s",
             (id_usuario,),
@@ -303,6 +256,7 @@ def atualizar_usuario(
 
         cursor.close()
 
+        # 2) Executa o UPDATE
         cursor = conexao.cursor()
         sql = """
             UPDATE usuario SET
@@ -322,6 +276,7 @@ def atualizar_usuario(
             usuario.voluntario,
             id_usuario,
         )
+
         cursor.execute(sql, valores)
         conexao.commit()
         cursor.close()
@@ -329,16 +284,11 @@ def atualizar_usuario(
 
         return {"status": "sucesso", "mensagem": "Usuário atualizado com sucesso!"}
     except mysql.connector.Error as err:
-        if err.errno == 1062:
-            raise HTTPException(
-                status_code=400,
-                detail="CPF, e-mail ou celular já cadastrado por outro usuário.",
-            )
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
 # ============================================================
-# ALTERAR SENHA
+# ALTERAR SENHA — exige login do próprio usuário e senha atual
 # ============================================================
 @router.put("/{id_usuario}/senha")
 def alterar_senha(
@@ -346,12 +296,14 @@ def alterar_senha(
     dados: SenhaUpdateSchema,
     usuario_atual: dict = Depends(obter_usuario_atual),
 ):
+    # 1) Só pode trocar a própria senha
     if usuario_atual["id_usuario"] != id_usuario:
         raise HTTPException(
             status_code=403,
             detail="Você só pode alterar a sua própria senha.",
         )
 
+    # 2) Valida força da senha nova
     if not senha_forte(dados.senha_nova):
         raise HTTPException(
             status_code=400,
@@ -367,7 +319,8 @@ def alterar_senha(
         cursor = conexao.cursor(dictionary=True)
 
         cursor.execute(
-            "SELECT senha FROM usuario WHERE id_usuario = %s", (id_usuario,)
+            "SELECT senha FROM usuario WHERE id_usuario = %s",
+            (id_usuario,),
         )
         registro = cursor.fetchone()
 
@@ -376,11 +329,13 @@ def alterar_senha(
             conexao.close()
             raise HTTPException(status_code=404, detail="Usuário não encontrado.")
 
+        # 3) Verifica a senha atual
         if not verificar_senha(dados.senha_atual, registro["senha"]):
             cursor.close()
             conexao.close()
             raise HTTPException(status_code=400, detail="Senha atual incorreta.")
 
+        # 4) Gera o novo hash e salva
         novo_hash = gerar_hash_senha(dados.senha_nova)
 
         cursor.close()
@@ -393,26 +348,20 @@ def alterar_senha(
         cursor.close()
         conexao.close()
 
-        return {"status": "sucesso", "mensagem": "Senha alterada com sucesso!"}
+        return {
+            "status": "sucesso",
+            "mensagem": "Senha alterada com sucesso!",
+        }
 
     except mysql.connector.Error as err:
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
 # ============================================================
-# DELETE — RNF 02: só o próprio usuário
+# DELETE
 # ============================================================
 @router.delete("/{id_usuario}")
-def deletar_usuario(
-    id_usuario: int,
-    usuario_atual: dict = Depends(obter_usuario_atual),
-):
-    if usuario_atual["id_usuario"] != id_usuario:
-        raise HTTPException(
-            status_code=403,
-            detail="Você só pode excluir a sua própria conta.",
-        )
-
+def deletar_usuario(id_usuario: int):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor()

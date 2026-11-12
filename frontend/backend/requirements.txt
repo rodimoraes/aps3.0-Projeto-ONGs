@@ -1,7 +1,0 @@
-fastapi
-uvicorn
-pydantic[email]
-python-jose[cryptography]
-bcrypt
-mysql-connector-python
-python-dotenv
