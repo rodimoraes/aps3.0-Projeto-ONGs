@@ -15,26 +15,6 @@ import {
 import Header from "../components/header.jsx";
 import { maskCPF, maskCelular, verificarForcaSenha } from "../../js/validador";
 
-const calcularIdade = (dataStr) => {
-  if (!dataStr) return null;
-  const [ano, mes, dia] = dataStr.split("-").map(Number);
-  if (!ano || !mes || !dia) return null;
-  const hoje = new Date();
-  let idade = hoje.getFullYear() - ano;
-  const m = hoje.getMonth() + 1;
-  const d = hoje.getDate();
-  if (m < mes || (m === mes && d < dia)) idade--;
-  return idade;
-};
-
-const dataMaximaMaioridade = () => {
-  const hoje = new Date();
-  const ano = hoje.getFullYear() - 18;
-  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
-  const dia = String(hoje.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
-};
-
 const API = "http://127.0.0.1:8000";
 const ESTADOS_CIVIS = ["solteiro", "casado", "divorciado", "viuvo"];
 const REQUISITOS = [
@@ -44,8 +24,6 @@ const REQUISITOS = [
   ["numero", "Um número"],
   ["especial", "Um caractere especial"],
 ];
-
-const [dataNascErro, setDataNascErro] = useState("");
 
 const inputCls =
   "w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition-all";
@@ -162,11 +140,8 @@ function PerfilUsuario() {
     let v = type === "checkbox" ? checked : value;
     if (name === "cpf") v = maskCPF(value);
     if (name === "celular") v = maskCelular(value);
-    if (name === "data_nascimento") {
-      // limpa erro ao editar
-      setDataNascErro("");
-    }
     setForm((prev) => ({ ...prev, [name]: v }));
+    // limpa mensagens ao editar
     if (erro) setErro("");
     if (sucesso) setSucesso("");
   };
@@ -175,26 +150,6 @@ function PerfilUsuario() {
     e.preventDefault();
     setErro("");
     setSucesso("");
-    setDataNascErro("");
-
-    // ---- Validação de maioridade ----
-    const idade = calcularIdade(form.data_nascimento);
-    if (idade === null) {
-      setErro("Data de nascimento inválida.");
-      return;
-    }
-    if (idade < 0) {
-      setDataNascErro("Data de nascimento não pode ser no futuro.");
-      setErro("Data de nascimento inválida.");
-      return;
-    }
-    if (idade < 18) {
-      setDataNascErro(
-        `É necessário ter 18 anos ou mais (idade atual: ${idade}).`,
-      );
-      setErro("Data de nascimento inválida.");
-      return;
-    }
 
     // ---------- Validações locais da senha ----------
     if (alterarSenha) {
@@ -476,16 +431,8 @@ function PerfilUsuario() {
                   value={form.data_nascimento}
                   onChange={handleChange}
                   required
-                  max={dataMaximaMaioridade()}
-                  className={`${inputCls} ${
-                    dataNascErro ? "border-red-400 focus:ring-red-500/30" : ""
-                  }`}
+                  className={inputCls}
                 />
-                {dataNascErro && (
-                  <p className="text-[11px] text-red-600 mt-1">
-                    {dataNascErro}
-                  </p>
-                )}
               </div>
             </div>
 

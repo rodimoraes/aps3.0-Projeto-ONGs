@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import Header from "../../components/header.jsx";
+import Header from "../../components/header.jsx"
 function EditarCampanha() {
   const { id_campanha } = useParams();
   const navigate = useNavigate();
@@ -55,15 +55,6 @@ function EditarCampanha() {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // ---- Validação de datas ----
-    if (
-      formCampanha.data_fim &&
-      formCampanha.data_fim < formCampanha.data_inicio
-    ) {
-      alert("A data de fim não pode ser anterior à data de início.");
-      return;
-    }
     const dadosFormatados = {
       id_ong: Number(formCampanha.id_ong),
       id_tipo_campanha: Number(formCampanha.id_tipo_campanha),
@@ -206,8 +197,8 @@ text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                 name="data_fim"
                 value={formCampanha.data_fim}
                 onChange={handleChange}
-                min={formCampanha.data_inicio || undefined}
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs
+text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               />
             </div>
           </div>

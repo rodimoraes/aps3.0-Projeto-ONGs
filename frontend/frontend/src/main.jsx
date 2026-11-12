@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import "./index.css";
 import ScrollToTop from "./components/ScrollToTop";
@@ -10,6 +10,8 @@ import ExplorarOngs from "./pages/explorarOngs";
 import PerfilUsuario from "./pages/perfilUsuario";
 
 import CadastrarUsuario from "./pages/usuario/cadastrarUsuario";
+import ListarUsuarios from "./pages/usuario/ListarUsuarios";
+import EditarUsuario from "./pages/usuario/editarUsuario";
 
 import DetalhesOng from "./pages/ongs/detalhesOng";
 import CadastrarOng from "./pages/ongs/cadastrarOng";
@@ -39,14 +41,8 @@ createRoot(document.getElementById("root")).render(
         <Route path="/editar-ong/:id" element={<EditarOng />} />
         <Route path="/ongs/:id_ong" element={<DetalhesOng />} />
         <Route path="/cadastrar-usuario" element={<CadastrarUsuario />} />
-
-        {/* RNF 02 — rotas antigas de admin redirecionam para o perfil do próprio usuário */}
-        <Route path="/usuarios" element={<Navigate to="/perfil" replace />} />
-        <Route
-          path="/editar-usuario/:id"
-          element={<Navigate to="/perfil" replace />}
-        />
-
+        <Route path="/usuarios" element={<ListarUsuarios />} />
+        <Route path="/editar-usuario/:id" element={<EditarUsuario />} />
         <Route path="/ongs/:id_ong/campanhas" element={<ListarCampanhas />} />
         <Route
           path="/ongs/:id_ong/campanhas/cadastrar"

@@ -19,7 +19,7 @@ import {
   verificarForcaSenha,
   montarEndereco,
 } from "../../../js/validador";
-import Header from "../../components/header.jsx";
+import Header from "../../components/header.jsx"
 
 const ESTADOS_CIVIS = ["solteiro", "casado", "divorciado", "viuvo"];
 const UFS =
@@ -40,27 +40,6 @@ const corBorda = {
   valid: "border-green-500 focus:ring-green-500/30",
   invalid: "border-red-400 focus:ring-red-500/30",
   idle: "border-slate-300 focus:ring-sky-500/30",
-};
-
-// ---- Helpers de idade ----
-const calcularIdade = (dataStr) => {
-  if (!dataStr) return null;
-  const [ano, mes, dia] = dataStr.split("-").map(Number);
-  if (!ano || !mes || !dia) return null;
-  const hoje = new Date();
-  let idade = hoje.getFullYear() - ano;
-  const m = hoje.getMonth() + 1;
-  const d = hoje.getDate();
-  if (m < mes || (m === mes && d < dia)) idade--;
-  return idade;
-};
-
-const dataMaximaMaioridade = () => {
-  const hoje = new Date();
-  const ano = hoje.getFullYear() - 18;
-  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
-  const dia = String(hoje.getDate()).padStart(2, "0");
-  return `${ano}-${mes}-${dia}`;
 };
 
 function Icone({ status }) {
@@ -216,7 +195,6 @@ function CadastrarUsuario() {
   const [cpf, setCpf] = useState({ status: "idle", msg: "" });
   const [celular, setCelular] = useState({ status: "idle", msg: "" });
   const [cep, setCep] = useState({ status: "idle", msg: "" });
-  const [dataNasc, setDataNasc] = useState({ status: "idle", msg: "" });
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
@@ -238,13 +216,13 @@ function CadastrarUsuario() {
     if (name === "cpf") setCpf({ status: "idle", msg: "" });
     if (name === "celular") setCelular({ status: "idle", msg: "" });
     if (name === "cep") setCep({ status: "idle", msg: "" });
-    if (name === "data_nascimento") setDataNasc({ status: "idle", msg: "" });
     setForm((prev) => ({ ...prev, [name]: v }));
   };
 
   const validarCpf = () => {
     const d = form.cpf.replace(/\D/g, "");
     if (!d) return;
+
     const r = validarCPF(form.cpf);
     setCpf(
       r.valid
@@ -256,40 +234,13 @@ function CadastrarUsuario() {
   const validarCelularField = () => {
     const d = form.celular.replace(/\D/g, "");
     if (!d) return;
+
     const r = validarCelular(form.celular);
     setCelular(
       r.valid
         ? { status: "valid", msg: "Celular válido." }
         : { status: "invalid", msg: r.error || "Celular inválido." },
     );
-  };
-
-  const validarDataNascimento = () => {
-    const v = form.data_nascimento;
-    if (!v) return;
-    const idade = calcularIdade(v);
-    if (idade === null) {
-      setDataNasc({
-        status: "invalid",
-        msg: "Data inválida.",
-      });
-      return;
-    }
-    if (idade < 0) {
-      setDataNasc({
-        status: "invalid",
-        msg: "Data não pode ser no futuro.",
-      });
-      return;
-    }
-    if (idade < 18) {
-      setDataNasc({
-        status: "invalid",
-        msg: `É necessário ter 18 anos ou mais (idade atual: ${idade}).`,
-      });
-      return;
-    }
-    setDataNasc({ status: "valid", msg: `${idade} anos — maior de idade.` });
   };
 
   const buscarCep = async () => {
@@ -318,10 +269,6 @@ function CadastrarUsuario() {
     if (cpf.status !== "valid") return alert("Valide o CPF antes de enviar.");
     if (celular.status !== "valid")
       return alert("Valide o celular antes de enviar.");
-    if (dataNasc.status !== "valid")
-      return alert(
-        "Data de nascimento inválida. É necessário ter 18 anos ou mais.",
-      );
     if (!forca.valida)
       return alert("A senha não atende aos requisitos mínimos.");
     if (cep.status === "loading") return alert("Aguarde a consulta do CEP.");
@@ -349,13 +296,7 @@ function CadastrarUsuario() {
         navigate("/login");
       } else {
         const err = await res.json();
-        let msg = "Verifique os dados.";
-        if (Array.isArray(err.detail)) {
-          msg = err.detail.map((e) => e.msg).join(", ");
-        } else if (typeof err.detail === "string") {
-          msg = err.detail;
-        }
-        alert(`Erro: ${msg}`);
+        alert(`Erro: ${err.detail || "Verifique os dados."}`);
       }
     } catch {
       alert("Não foi possível conectar ao servidor backend.");
@@ -366,10 +307,10 @@ function CadastrarUsuario() {
 
   return (
     <div className="min-h-screen bg-slate-50 py-0 px-4">
-      <Header />
+       <Header/>
       <div className="max-w-2xl mx-auto py-5">
         <Link
-          to="/login"
+          to="/usuarios"
           className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-700 font-medium mb-6"
         >
           <ArrowLeft className="w-5 h-5" /> Voltar
@@ -428,37 +369,13 @@ function CadastrarUsuario() {
                 onChange={handleChange}
                 placeholder="exemplo@email.com"
               />
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Data de Nascimento <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    name="data_nascimento"
-                    value={form.data_nascimento}
-                    onChange={handleChange}
-                    onBlur={validarDataNascimento}
-                    required
-                    max={dataMaximaMaioridade()}
-                    className={`${inputCls} ${
-                      corBorda[dataNasc.status] || corBorda.idle
-                    }`}
-                  />
-                  <Icone status={dataNasc.status} />
-                </div>
-                {dataNasc.msg && (
-                  <p
-                    className={`text-xs mt-1 ${
-                      dataNasc.status === "valid"
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {dataNasc.msg}
-                  </p>
-                )}
-              </div>
+              <CampoTexto
+                label="Data de Nascimento"
+                name="data_nascimento"
+                type="date"
+                value={form.data_nascimento}
+                onChange={handleChange}
+              />
             </div>
 
             <CampoTexto
@@ -597,7 +514,6 @@ function CadastrarUsuario() {
                   cpf.status === "loading" ||
                   celular.status === "loading" ||
                   cep.status === "loading" ||
-                  dataNasc.status !== "valid" ||
                   !forca.valida
                 }
                 className="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import Header from "../../components/header.jsx";
+import Header from "../../components/header.jsx"
 function CadastrarCampanha() {
   const { id_ong, id_campanha } = useParams();
   const navigate = useNavigate();
@@ -58,15 +58,6 @@ function CadastrarCampanha() {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // ---- Validação de datas ----
-    if (
-      formCampanha.data_fim &&
-      formCampanha.data_fim < formCampanha.data_inicio
-    ) {
-      alert("A data de fim não pode ser anterior à data de início.");
-      return;
-    }
     const dadosFormatados = {
       ...formCampanha,
       id_ong: Number(formCampanha.id_ong),
@@ -109,7 +100,7 @@ function CadastrarCampanha() {
   }
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-0">
-      <Header />
+      <Header/>
       <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-xs border border-slate-200 sm:p-8">
         <Link
           to={`/ongs/${formCampanha.id_ong}/campanhas`}
@@ -173,8 +164,7 @@ font-medium mb-6 text-sm transition-colors"
                 name="data_fim"
                 value={formCampanha.data_fim}
                 onChange={handleChange}
-                min={formCampanha.data_inicio || undefined}
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 textslate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               />
             </div>
           </div>
