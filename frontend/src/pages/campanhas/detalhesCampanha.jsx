@@ -59,23 +59,37 @@ function DetalhesCampanha() {
         const dataCampanha = await resCampanha.json();
         setCampanha(dataCampanha);
 
-        const [resOng, resImagens, resVoluntarios] = await Promise.all([
+        const [resOng, resImagens] = await Promise.all([
           fetch(`http://127.0.0.1:8000/ongs/${dataCampanha.id_ong}`),
           fetch(`http://127.0.0.1:8000/imagens/campanha/${id_campanha}`),
-          fetch(`http://127.0.0.1:8000/campanhas/${id_campanha}/voluntarios`),
         ]);
 
-        if (resOng.ok) setOng(await resOng.json());
+        const dataOng = resOng.ok ? await resOng.json() : null;
+        if (dataOng) setOng(dataOng);
         if (resImagens.ok) setImagens(await resImagens.json());
-        if (resVoluntarios.ok) setVoluntarios(await resVoluntarios.json());
 
+        // Busca lista de voluntários APENAS se for o representante da ONG
+        if (
+          dataOng &&
+          usuarioLogado &&
+          dataOng.id_usuario_representante === usuarioLogado.id_usuario
+        ) {
+          const token = localStorage.getItem("token");
+          const resVol = await fetch(
+            `http://127.0.0.1:8000/campanhas/${id_campanha}/voluntarios`,
+            { headers: { Authorization: `Bearer ${token}` } },
+          );
+          if (resVol.ok) setVoluntarios(await resVol.json());
+        }
+
+        // Verifica inscrição do usuário
         if (usuarioLogado) {
-          const resChecagem = await fetch(
+          const resCheck = await fetch(
             `http://127.0.0.1:8000/campanhas/${id_campanha}/inscricao/${usuarioLogado.id_usuario}`,
           );
-          if (resChecagem.ok) {
-            const dataChecagem = await resChecagem.json();
-            setInscrito(dataChecagem.inscrito);
+          if (resCheck.ok) {
+            const d = await resCheck.json();
+            setInscrito(d.inscrito);
           }
         }
       } catch (error) {
@@ -86,6 +100,54 @@ function DetalhesCampanha() {
     };
     carregarDados();
   }, [id_campanha, navigate]);
+
+  const handleInscricaoVoluntario = async () => {
+    if (!usuarioLogado) {
+      alert("Você precisa estar logado para se inscrever como voluntário!");
+      navigate("/login", {
+        state: { redirectTo: `/campanhas/${id_campanha}` },
+      });
+      return;
+    }
+    try {
+      setSubmittingInscricao(true);
+      const response = await fetch(
+        `http://127.0.0.1:8000/campanhas/${id_campanha}/inscrever`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id_usuario: usuarioLogado.id_usuario }),
+        },
+      );
+      if (response.ok) {
+        alert("Parabéns! Sua candidatura de voluntário foi enviada!");
+        setInscrito(true);
+
+        // Recarrega a campanha para atualizar total_voluntarios
+        const resCamp = await fetch(
+          `http://127.0.0.1:8000/campanhas/${id_campanha}`,
+        );
+        if (resCamp.ok) setCampanha(await resCamp.json());
+
+        // Se for representante, recarrega a lista
+        if (podeGerenciar) {
+          const token = localStorage.getItem("token");
+          const resVol = await fetch(
+            `http://127.0.0.1:8000/campanhas/${id_campanha}/voluntarios`,
+            { headers: { Authorization: `Bearer ${token}` } },
+          );
+          if (resVol.ok) setVoluntarios(await resVol.json());
+        }
+      } else {
+        const err = await response.json();
+        alert(err.detail || "Erro na inscrição.");
+      }
+    } catch (error) {
+      console.error("Erro ao se inscrever:", error);
+    } finally {
+      setSubmittingInscricao(false);
+    }
+  };
 
   const handleFotoUpload = async (e) => {
     const file = e.target.files[0];
@@ -157,44 +219,6 @@ function DetalhesCampanha() {
     }
   };
 
-  const handleInscricaoVoluntario = async () => {
-    if (!usuarioLogado) {
-      alert("Você precisa estar logado para se inscrever como voluntário!");
-      navigate("/login", {
-        state: { redirectTo: `/campanhas/${id_campanha}` },
-      });
-      return;
-    }
-    try {
-      setSubmittingInscricao(true);
-      const response = await fetch(
-        `http://127.0.0.1:8000/campanhas/${id_campanha}/inscrever`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id_usuario: usuarioLogado.id_usuario }),
-        },
-      );
-      if (response.ok) {
-        alert("Parabéns! Sua candidatura de voluntário foi enviada!");
-        setInscrito(true);
-        if (podeGerenciar) {
-          const resVol = await fetch(
-            `http://127.0.0.1:8000/campanhas/${id_campanha}/voluntarios`,
-          );
-          if (resVol.ok) setVoluntarios(await resVol.json());
-        }
-      } else {
-        const err = await response.json();
-        alert(err.detail || "Erro na inscrição.");
-      }
-    } catch (error) {
-      console.error("Erro ao se inscrever:", error);
-    } finally {
-      setSubmittingInscricao(false);
-    }
-  };
-
   // BOTÃO VOLTAR CORRIGIDO — sempre navega para uma rota explícita
   // (evita loop com navigate(-1) entre /ongs/:id e /campanhas/:id)
   const handleVoltar = () => {
@@ -217,8 +241,9 @@ function DetalhesCampanha() {
 
   const ehVoluntariado = campanha?.id_tipo_campanha === 2;
   const meta = Number(campanha?.meta_arrecadacao || 0);
+  const totalVoluntarios = campanha?.total_voluntarios ?? voluntarios.length;
   const atual = ehVoluntariado
-    ? voluntarios.length
+    ? totalVoluntarios
     : Number(campanha?.valor_arrecadado || 0);
   const percentual =
     meta > 0 ? Math.min(100, Math.round((atual / meta) * 100)) : 0;
@@ -337,7 +362,7 @@ function DetalhesCampanha() {
                       Inscritos Atualmente
                     </p>
                     <p className="text-lg font-black text-purple-700">
-                      {voluntarios.length} voluntários
+                      {totalVoluntarios} voluntários
                     </p>
                   </div>
                 </>

@@ -1,10 +1,12 @@
 import os
 from datetime import date
 from typing import Optional
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel, model_validator
 import mysql.connector
 from dotenv import load_dotenv
+
+from auth import obter_usuario_atual
 
 load_dotenv()
 
@@ -20,10 +22,9 @@ def get_db_connection():
     )
 
 
-# Schema Pydantic atualizado com id_tipo_campanha
 class CampanhaSchema(BaseModel):
     id_ong: int
-    id_tipo_campanha: int  # 1: Arrecadação, 2: Voluntariado
+    id_tipo_campanha: int
     titulo: str
     descricao: str
     data_inicio: date
@@ -32,12 +33,20 @@ class CampanhaSchema(BaseModel):
     valor_arrecadado: Optional[float] = 0.0
     status: Optional[str] = "ativa"
 
+    @model_validator(mode="after")
+    def validar_datas(self):
+        if self.data_fim and self.data_fim < self.data_inicio:
+            raise ValueError(
+                "A data de fim não pode ser anterior à data de início."
+            )
+        return self
+
 
 class InscricaoVoluntarioSchema(BaseModel):
     id_usuario: int
 
 
-# 1. CREATE - Cadastrar nova campanha
+# 1. CREATE
 @router.post("")
 def cadastrar_campanha(campanha: CampanhaSchema):
     try:
@@ -74,15 +83,16 @@ def cadastrar_campanha(campanha: CampanhaSchema):
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
-# 2. READ - Listar todas as campanhas de UMA ONG ESPECÍFICA
-# (Deve ser declarada ANTES da rota GET /{id_campanha})
+# 2. READ - por ONG
 @router.get("/ong/{id_ong}")
 def listar_campanhas_por_ong(id_ong: int):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor(dictionary=True)
         sql = """
-        SELECT c.*, t.nome as tipo_nome
+        SELECT c.*, t.nome as tipo_nome,
+               (SELECT COUNT(*) FROM voluntario_campanha v
+                WHERE v.id_campanha = c.id_campanha) AS total_voluntarios
         FROM campanha c
         LEFT JOIN tipo_campanha t ON c.id_tipo_campanha = t.id_tipo_campanha
         WHERE c.id_ong = %s
@@ -97,14 +107,16 @@ def listar_campanhas_por_ong(id_ong: int):
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
-# 3. READ - Buscar detalhes de UMA campanha específica
+# 3. READ - uma campanha (inclui total_voluntarios público)
 @router.get("/{id_campanha}")
 def buscar_campanha(id_campanha: int):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor(dictionary=True)
         sql = """
-        SELECT c.*, t.nome as tipo_nome
+        SELECT c.*, t.nome as tipo_nome,
+               (SELECT COUNT(*) FROM voluntario_campanha v
+                WHERE v.id_campanha = c.id_campanha) AS total_voluntarios
         FROM campanha c
         LEFT JOIN tipo_campanha t ON c.id_tipo_campanha = t.id_tipo_campanha
         WHERE c.id_campanha = %s
@@ -120,7 +132,7 @@ def buscar_campanha(id_campanha: int):
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
-# 4. UPDATE - Atualizar dados da campanha
+# 4. UPDATE
 @router.put("/{id_campanha}")
 def atualizar_campanha(id_campanha: int, campanha: CampanhaSchema):
     try:
@@ -128,14 +140,9 @@ def atualizar_campanha(id_campanha: int, campanha: CampanhaSchema):
         cursor = conexao.cursor()
         sql = """
         UPDATE campanha SET
-            id_tipo_campanha = %s,
-            titulo = %s,
-            descricao = %s,
-            data_inicio = %s,
-            data_fim = %s,
-            meta_arrecadacao = %s,
-            valor_arrecadado = %s,
-            status = %s
+            id_tipo_campanha = %s, titulo = %s, descricao = %s,
+            data_inicio = %s, data_fim = %s,
+            meta_arrecadacao = %s, valor_arrecadado = %s, status = %s
         WHERE id_campanha = %s
         """
         valores = (
@@ -162,7 +169,7 @@ def atualizar_campanha(id_campanha: int, campanha: CampanhaSchema):
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
-# 5. DELETE - Excluir uma campanha
+# 5. DELETE
 @router.delete("/{id_campanha}")
 def deletar_campanha(id_campanha: int):
     try:
@@ -181,7 +188,7 @@ def deletar_campanha(id_campanha: int):
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
-# 6. INSCRIÇÃO - Inscrever voluntário na campanha
+# 6. INSCRIÇÃO
 @router.post("/{id_campanha}/inscrever")
 def inscrever_voluntario(id_campanha: int, dados: InscricaoVoluntarioSchema):
     try:
@@ -200,12 +207,12 @@ def inscrever_voluntario(id_campanha: int, dados: InscricaoVoluntarioSchema):
         if err.errno == 1062:
             raise HTTPException(
                 status_code=400,
-                detail="Você já está inscrito nesta campanha."
+                detail="Você já está inscrito nesta campanha.",
             )
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
-# 7. VERIFICAR INSCRIÇÃO - Checa se o usuário já se inscreveu
+# 7. VERIFICAR INSCRIÇÃO
 @router.get("/{id_campanha}/inscricao/{id_usuario}")
 def verificar_inscricao(id_campanha: int, id_usuario: int):
     try:
@@ -219,14 +226,43 @@ def verificar_inscricao(id_campanha: int, id_usuario: int):
         return {"inscrito": bool(inscricao), "dados": inscricao}
     except mysql.connector.Error as err:
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
-    
-# 8. LISTAR VOLUNTÁRIOS DA CAMPANHA - Busca os dados de contato dos inscritos
-# Rota para listar os voluntários de uma campanha específica
+
+
+# 8. LISTAR VOLUNTÁRIOS — RNF 02: só o representante da ONG
 @router.get("/{id_campanha}/voluntarios")
-def listar_voluntarios_campanha(id_campanha: int):
+def listar_voluntarios_campanha(
+    id_campanha: int,
+    usuario_atual: dict = Depends(obter_usuario_atual),
+):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor(dictionary=True)
+
+        # Verifica se o usuário é o representante da ONG dona da campanha
+        cursor.execute(
+            """
+            SELECT o.id_usuario_representante
+            FROM campanha c
+            INNER JOIN ong o ON c.id_ong = o.id_ong
+            WHERE c.id_campanha = %s
+            """,
+            (id_campanha,),
+        )
+        campanha_data = cursor.fetchone()
+
+        if not campanha_data:
+            cursor.close()
+            conexao.close()
+            raise HTTPException(status_code=404, detail="Campanha não encontrada")
+
+        if campanha_data["id_usuario_representante"] != usuario_atual["id_usuario"]:
+            cursor.close()
+            conexao.close()
+            raise HTTPException(
+                status_code=403,
+                detail="Apenas o representante da ONG pode ver a lista de voluntários.",
+            )
+
         sql = """
         SELECT
             v.id_voluntario_campanha,
@@ -248,27 +284,23 @@ def listar_voluntarios_campanha(id_campanha: int):
         return voluntarios
     except mysql.connector.Error as err:
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
-    
-# 9. DASHBOARD DA ONG - Métricas consolidadas por tipo e status
+
+
+# 9. DASHBOARD
 @router.get("/ong/{id_ong}/dashboard")
 def buscar_dashboard_ong(id_ong: int):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor(dictionary=True)
 
-        # Busca todas as campanhas da ONG com o nome do tipo
         sql = """
         SELECT
-            c.id_campanha,
-            c.titulo,
-            c.id_tipo_campanha,
+            c.id_campanha, c.titulo, c.id_tipo_campanha,
             t.nome AS tipo_nome,
-            c.meta_arrecadacao,
-            c.valor_arrecadado,
-            c.status,
-            c.data_inicio,
-            c.data_fim,
-            (SELECT COUNT(*) FROM voluntario_campanha v WHERE v.id_campanha = c.id_campanha) AS total_voluntarios
+            c.meta_arrecadacao, c.valor_arrecadado, c.status,
+            c.data_inicio, c.data_fim,
+            (SELECT COUNT(*) FROM voluntario_campanha v
+             WHERE v.id_campanha = c.id_campanha) AS total_voluntarios
         FROM campanha c
         LEFT JOIN tipo_campanha t ON c.id_tipo_campanha = t.id_tipo_campanha
         WHERE c.id_ong = %s
@@ -279,19 +311,27 @@ def buscar_dashboard_ong(id_ong: int):
         cursor.close()
         conexao.close()
 
-        # Consolidação dos Indicadores (KPIs)
         total_campanhas = len(campanhas)
         ativas = sum(1 for c in campanhas if c["status"] == "ativa")
-        encerradas = sum(1 for c in campanhas if c["status"] in ["concluida", "cancelada"])
+        encerradas = sum(
+            1 for c in campanhas if c["status"] in ["concluida", "cancelada"]
+        )
 
-        # Campanhas por Tipo
         arrecadacao = [c for c in campanhas if c["id_tipo_campanha"] == 1]
         voluntariado = [c for c in campanhas if c["id_tipo_campanha"] == 2]
 
-        meta_financeira_total = sum(float(c["meta_arrecadacao"] or 0) for c in arrecadacao)
-        total_arrecadado = sum(float(c["valor_arrecadado"] or 0) for c in arrecadacao)
-        meta_voluntarios_total = sum(int(c["meta_arrecadacao"] or 0) for c in voluntariado)
-        total_voluntarios_inscritos = sum(int(c["total_voluntarios"] or 0) for c in voluntariado)
+        meta_financeira_total = sum(
+            float(c["meta_arrecadacao"] or 0) for c in arrecadacao
+        )
+        total_arrecadado = sum(
+            float(c["valor_arrecadado"] or 0) for c in arrecadacao
+        )
+        meta_voluntarios_total = sum(
+            int(c["meta_arrecadacao"] or 0) for c in voluntariado
+        )
+        total_voluntarios_inscritos = sum(
+            int(c["total_voluntarios"] or 0) for c in voluntariado
+        )
 
         return {
             "resumo": {
