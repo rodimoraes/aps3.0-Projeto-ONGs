@@ -82,7 +82,8 @@ def listar_campanhas_por_ong(id_ong: int):
         conexao = get_db_connection()
         cursor = conexao.cursor(dictionary=True)
         sql = """
-        SELECT c.*, t.nome as tipo_nome
+        SELECT c.*, t.nome as tipo_nome,
+               (SELECT COUNT(*) FROM voluntario_campanha v WHERE v.id_campanha = c.id_campanha) AS total_voluntarios
         FROM campanha c
         LEFT JOIN tipo_campanha t ON c.id_tipo_campanha = t.id_tipo_campanha
         WHERE c.id_ong = %s
@@ -95,7 +96,6 @@ def listar_campanhas_por_ong(id_ong: int):
         return campanhas
     except mysql.connector.Error as err:
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
-
 
 # 3. READ - Buscar detalhes de UMA campanha específica
 @router.get("/{id_campanha}")

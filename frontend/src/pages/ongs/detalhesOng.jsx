@@ -16,6 +16,7 @@ import {
   Eye,
   Lock,
   BarChart3,
+  Users,
 } from "lucide-react";
 import Header from "../../components/header.jsx";
 import MapaEndereco from "../../components/mapaEndereco";
@@ -126,10 +127,16 @@ function DetalhesOng() {
     );
   }
 
-  const totalArrecadado = campanhas.reduce(
-    (acc, c) => acc + Number(c.valor_arrecadado || 0),
-    0,
-  );
+  // Soma apenas as campanhas de arrecadação financeira (id_tipo_campanha === 1)
+  const totalArrecadado = campanhas
+    .filter((c) => Number(c.id_tipo_campanha) === 1)
+    .reduce((acc, c) => acc + Number(c.valor_arrecadado || 0), 0);
+  
+  // Calcula o número total de voluntários inscritos (id_tipo_campanha === 2)
+  const totalVoluntarios = campanhas
+    .filter((c) => Number(c.id_tipo_campanha) === 2)
+    .reduce((acc, c) => acc + Number(c.total_voluntarios || 0), 0);
+
   const campanhasAtivas = campanhas.filter((c) => c.status === "ativa").length;
 
   return (
@@ -334,14 +341,14 @@ function DetalhesOng() {
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-slate-400 uppercase">
-                Galeria
+                Voluntários Inscritos
               </span>
-              <ImageIcon className="w-4 h-4 text-purple-500" />
+              <Users className="w-4 h-4 text-purple-500" />
             </div>
             <p className="text-2xl font-black text-slate-800">
-              {imagens.length}
+              {totalVoluntarios}
             </p>
-            <p className="text-[11px] text-slate-500 mt-1">Fotos vinculadas</p>
+            <p className="text-[11px] text-slate-500 mt-1">Engajamento total</p>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
@@ -401,7 +408,7 @@ function DetalhesOng() {
                   />
                   <div
                     onClick={() => setImagemExpandida(img)}
-                    className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex items-end"
+                    className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex items-end cursor-pointer"
                   >
                     <p className="text-[11px] text-white font-medium line-clamp-1">
                       {img.descricao}
@@ -440,11 +447,14 @@ function DetalhesOng() {
           ) : (
             <div className="grid gap-6 sm:grid-cols-2">
               {campanhas.map((c) => {
+                const ehVoluntariado = Number(c.id_tipo_campanha) === 2;
                 const meta = Number(c.meta_arrecadacao || 0);
-                const arrecadado = Number(c.valor_arrecadado || 0);
+                const atual = ehVoluntariado
+                  ? Number(c.total_voluntarios || 0)
+                  : Number(c.valor_arrecadado || 0);
                 const percentual =
                   meta > 0
-                    ? Math.min(100, Math.round((arrecadado / meta) * 100))
+                    ? Math.min(100, Math.round((atual / meta) * 100))
                     : 0;
 
                 return (
@@ -476,11 +486,15 @@ function DetalhesOng() {
                         <div className="space-y-1.5 mb-4">
                           <div className="flex justify-between text-xs font-semibold text-slate-700">
                             <span>Progresso</span>
-                            <span>{percentual}%</span>
+                            <span className={ehVoluntariado ? "text-purple-700" : "text-emerald-700"}>
+                              {percentual}%
+                            </span>
                           </div>
                           <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
                             <div
-                              className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
+                              className={`h-2 rounded-full transition-all duration-500 ${
+                                ehVoluntariado ? "bg-purple-600" : "bg-emerald-500"
+                              }`}
                               style={{ width: `${percentual}%` }}
                             />
                           </div>
@@ -488,28 +502,51 @@ function DetalhesOng() {
                       )}
 
                       <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 pt-2 border-t border-slate-200/60 mb-4">
-                        <div>
-                          <p className="text-[10px] uppercase text-slate-400">
-                            Meta
-                          </p>
-                          <p className="font-bold text-slate-700">
-                            R${" "}
-                            {meta.toLocaleString("pt-BR", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase text-slate-400">
-                            Arrecadado
-                          </p>
-                          <p className="font-bold text-emerald-600">
-                            R${" "}
-                            {arrecadado.toLocaleString("pt-BR", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </p>
-                        </div>
+                        {ehVoluntariado ? (
+                          <>
+                            <div>
+                              <p className="text-[10px] uppercase text-slate-400">
+                                Meta
+                              </p>
+                              <p className="font-bold text-slate-700">
+                                {meta} {meta === 1 ? "pessoa" : "pessoas"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] uppercase text-slate-400">
+                                Inscritos
+                              </p>
+                              <p className="font-bold text-purple-700">
+                                {atual} {atual === 1 ? "voluntário" : "voluntários"}
+                              </p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div>
+                              <p className="text-[10px] uppercase text-slate-400">
+                                Meta
+                              </p>
+                              <p className="font-bold text-slate-700">
+                                R${" "}
+                                {meta.toLocaleString("pt-BR", {
+                                  minimumFractionDigits: 2,
+                                })}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] uppercase text-slate-400">
+                                Arrecadado
+                              </p>
+                              <p className="font-bold text-emerald-600">
+                                R${" "}
+                                {atual.toLocaleString("pt-BR", {
+                                  minimumFractionDigits: 2,
+                                })}
+                              </p>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
 
