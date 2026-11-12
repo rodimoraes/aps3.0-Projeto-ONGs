@@ -11,21 +11,21 @@ function Home() {
   const carouselSlides = [
     {
       id: 1,
-      image: "#",
+      image: "https://images.pexels.com/photos/6646868/pexels-photo-6646868.jpeg",
       title: "Conecte-se com causas que transformam vidas",
       subtitle:
         "Descubra ONGs sérias perto de você, conheça seus projetos e encontre a melhor forma de ajudar — seja doando tempo, recursos ou visibilidade.",
     },
     {
       id: 2,
-      image: "#",
+      image: "https://images.pexels.com/photos/7156157/pexels-photo-7156157.jpeg",
       title: "Encontre a ONG certa para você apoiar",
       subtitle:
         "Explore organizações por causa, cidade e categoria. Compare campanhas ativas, acompanhe metas e escolha quem faz sentido para o seu propósito.",
     },
     {
       id: 3,
-      image: "#",
+      image: "https://images.pexels.com/photos/7469220/pexels-photo-7469220.jpeg",
       title: "Sua ONG também pode estar aqui",
       subtitle:
         "Cadastre sua organização em minutos, divulgue campanhas de arrecadação e voluntariado, e conecte-se a uma rede de pessoas prontas para ajudar.",
