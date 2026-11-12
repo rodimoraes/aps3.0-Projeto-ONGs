@@ -6,7 +6,12 @@ import mysql.connector
 from dotenv import load_dotenv
 import os
 
-from auth import gerar_hash_senha, verificar_senha, criar_token_acesso, obter_usuario_atual
+from auth import (
+    gerar_hash_senha,
+    verificar_senha,
+    criar_token_acesso,
+    obter_usuario_atual,
+)
 
 load_dotenv()
 
@@ -22,6 +27,9 @@ def get_db_connection():
     )
 
 
+# ============================================================
+# Schemas
+# ============================================================
 class UsuarioSchema(BaseModel):
     nome: str
     cpf: str
@@ -50,9 +58,34 @@ class LoginSchema(BaseModel):
     senha: str
 
 
+class SenhaUpdateSchema(BaseModel):
+    senha_atual: str
+    senha_nova: str
+
+
+# ============================================================
+# Helper: valida a força da senha no backend
+# (mesmos critérios usados no frontend: 8+, maiúsc, minúsc, número, especial)
+# ============================================================
+CARACTERES_ESPECIAIS = set("!@#$%^&*(),.?\":{}|<>_-+=;'/\\[]~`")
+
+
+def senha_forte(senha: str) -> bool:
+    if not senha or len(senha) < 8:
+        return False
+    if not any(c.isupper() for c in senha):
+        return False
+    if not any(c.islower() for c in senha):
+        return False
+    if not any(c.isdigit() for c in senha):
+        return False
+    if not any(c in CARACTERES_ESPECIAIS for c in senha):
+        return False
+    return True
+
+
 # ============================================================
 # CREATE — representante_ong sempre começa como FALSE
-# (vira TRUE só ao criar uma ONG, via POST /ongs)
 # ============================================================
 @router.post("")
 def cadastrar_usuario(usuario: UsuarioSchema):
@@ -78,7 +111,7 @@ def cadastrar_usuario(usuario: UsuarioSchema):
             usuario.data_nascimento,
             usuario.celular,
             usuario.voluntario,
-            False,  # representante_ong sempre FALSE no cadastro
+            False,
         )
 
         cursor.execute(sql, valores)
@@ -91,7 +124,7 @@ def cadastrar_usuario(usuario: UsuarioSchema):
         return {
             "status": "sucesso",
             "mensagem": "Usuário cadastrado com sucesso!",
-            "id": novo_id
+            "id": novo_id,
         }
 
     except mysql.connector.Error as err:
@@ -116,10 +149,12 @@ def login(dados: LoginSchema):
         if not usuario or not verificar_senha(dados.senha, usuario["senha"]):
             raise HTTPException(status_code=400, detail="E-mail ou senha incorretos.")
 
-        token = criar_token_acesso(data={
-            "sub": usuario["email"],
-            "id_usuario": usuario["id_usuario"],
-        })
+        token = criar_token_acesso(
+            data={
+                "sub": usuario["email"],
+                "id_usuario": usuario["id_usuario"],
+            }
+        )
 
         return {
             "status": "sucesso",
@@ -131,7 +166,7 @@ def login(dados: LoginSchema):
                 "email": usuario["email"],
                 "voluntario": bool(usuario["voluntario"]),
                 "representante_ong": bool(usuario["representante_ong"]),
-            }
+            },
         }
     except mysql.connector.Error as err:
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
@@ -201,7 +236,7 @@ def buscar_usuario(id_usuario: int):
 
 
 # ============================================================
-# UPDATE — representante_ong NÃO é alterável por aqui
+# UPDATE — dados cadastrais (representante_ong NÃO é alterável)
 # ============================================================
 @router.put("/{id_usuario}")
 def atualizar_usuario(id_usuario: int, usuario: UsuarioUpdateSchema):
@@ -221,7 +256,7 @@ def atualizar_usuario(id_usuario: int, usuario: UsuarioUpdateSchema):
 
         cursor.close()
 
-        # 2) Executa o UPDATE (mesmo que nada mude, retornamos sucesso)
+        # 2) Executa o UPDATE
         cursor = conexao.cursor()
         sql = """
             UPDATE usuario SET
@@ -252,40 +287,72 @@ def atualizar_usuario(id_usuario: int, usuario: UsuarioUpdateSchema):
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
-    try:
-        conexao = get_db_connection()
-        cursor = conexao.cursor()
-
-        sql = """
-            UPDATE usuario SET
-                nome=%s, cpf=%s, endereco=%s, estado_civil=%s,
-                email=%s, data_nascimento=%s, celular=%s,
-                voluntario=%s
-            WHERE id_usuario=%s
-        """
-        valores = (
-            usuario.nome,
-            usuario.cpf,
-            usuario.endereco,
-            usuario.estado_civil,
-            usuario.email,
-            usuario.data_nascimento,
-            usuario.celular,
-            usuario.voluntario,
-            id_usuario,
+# ============================================================
+# ALTERAR SENHA — exige login do próprio usuário e senha atual
+# ============================================================
+@router.put("/{id_usuario}/senha")
+def alterar_senha(
+    id_usuario: int,
+    dados: SenhaUpdateSchema,
+    usuario_atual: dict = Depends(obter_usuario_atual),
+):
+    # 1) Só pode trocar a própria senha
+    if usuario_atual["id_usuario"] != id_usuario:
+        raise HTTPException(
+            status_code=403,
+            detail="Você só pode alterar a sua própria senha.",
         )
 
-        cursor.execute(sql, valores)
-        conexao.commit()
-        afetadas = cursor.rowcount
+    # 2) Valida força da senha nova
+    if not senha_forte(dados.senha_nova):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "A nova senha não atende aos requisitos mínimos: "
+                "mínimo 8 caracteres, uma maiúscula, uma minúscula, "
+                "um número e um caractere especial."
+            ),
+        )
 
+    try:
+        conexao = get_db_connection()
+        cursor = conexao.cursor(dictionary=True)
+
+        cursor.execute(
+            "SELECT senha FROM usuario WHERE id_usuario = %s",
+            (id_usuario,),
+        )
+        registro = cursor.fetchone()
+
+        if not registro:
+            cursor.close()
+            conexao.close()
+            raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+
+        # 3) Verifica a senha atual
+        if not verificar_senha(dados.senha_atual, registro["senha"]):
+            cursor.close()
+            conexao.close()
+            raise HTTPException(status_code=400, detail="Senha atual incorreta.")
+
+        # 4) Gera o novo hash e salva
+        novo_hash = gerar_hash_senha(dados.senha_nova)
+
+        cursor.close()
+        cursor = conexao.cursor()
+        cursor.execute(
+            "UPDATE usuario SET senha = %s WHERE id_usuario = %s",
+            (novo_hash, id_usuario),
+        )
+        conexao.commit()
         cursor.close()
         conexao.close()
 
-        if afetadas == 0:
-            raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+        return {
+            "status": "sucesso",
+            "mensagem": "Senha alterada com sucesso!",
+        }
 
-        return {"status": "sucesso", "mensagem": "Usuário atualizado com sucesso!"}
     except mysql.connector.Error as err:
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
@@ -314,6 +381,6 @@ def deletar_usuario(id_usuario: int):
         if err.errno == 1451:
             raise HTTPException(
                 status_code=409,
-                detail="Não é possível excluir: usuário está vinculado a uma ONG."
+                detail="Não é possível excluir: usuário está vinculado a uma ONG.",
             )
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")

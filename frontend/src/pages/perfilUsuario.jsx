@@ -8,6 +8,9 @@ import {
   EyeOff,
   Check,
   X,
+  KeyRound,
+  Loader2,
+  CheckCircle2,
 } from "lucide-react";
 import Header from "../components/header.jsx";
 import { maskCPF, maskCelular, verificarForcaSenha } from "../../js/validador";
@@ -68,6 +71,8 @@ function PerfilUsuario() {
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
+  const [sucesso, setSucesso] = useState("");
+  const [mostrarSenhaAtual, setMostrarSenhaAtual] = useState(false);
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [alterarSenha, setAlterarSenha] = useState(false);
 
@@ -80,6 +85,7 @@ function PerfilUsuario() {
     data_nascimento: "",
     celular: "",
     voluntario: false,
+    senha_atual: "",
     novaSenha: "",
     confirmarSenha: "",
   });
@@ -107,6 +113,7 @@ function PerfilUsuario() {
             data_nascimento: data.data_nascimento || "",
             celular: data.celular || "",
             voluntario: Boolean(data.voluntario),
+            senha_atual: "",
             novaSenha: "",
             confirmarSenha: "",
           });
@@ -134,13 +141,22 @@ function PerfilUsuario() {
     if (name === "cpf") v = maskCPF(value);
     if (name === "celular") v = maskCelular(value);
     setForm((prev) => ({ ...prev, [name]: v }));
+    // limpa mensagens ao editar
+    if (erro) setErro("");
+    if (sucesso) setSucesso("");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErro("");
+    setSucesso("");
 
+    // ---------- Validações locais da senha ----------
     if (alterarSenha) {
+      if (!form.senha_atual) {
+        setErro("Informe a sua senha atual para alterá-la.");
+        return;
+      }
       if (!forca.valida) {
         setErro("A nova senha não atende aos requisitos mínimos.");
         return;
@@ -152,8 +168,11 @@ function PerfilUsuario() {
     }
 
     setSalvando(true);
+
     try {
-      // Atualiza os dados pessoais (endpoint existente)
+      // ============================================================
+      // 1) Atualiza os dados cadastrais
+      // ============================================================
       const payload = {
         nome: form.nome,
         cpf: form.cpf,
@@ -165,25 +184,28 @@ function PerfilUsuario() {
         voluntario: form.voluntario,
       };
 
-      const res = await fetch(`${API}/usuarios/${usuarioLogado.id_usuario}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const resDados = await fetch(
+        `${API}/usuarios/${usuarioLogado.id_usuario}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
+      if (!resDados.ok) {
+        const err = await resDados.json().catch(() => ({}));
         const msg = Array.isArray(err.detail)
           ? err.detail
               .map((x) => `${x.loc?.join(".") || "campo"}: ${x.msg}`)
               .join(", ")
-          : err.detail || "Erro ao salvar alterações.";
+          : err.detail || "Erro ao salvar os dados cadastrais.";
         setErro(msg);
         setSalvando(false);
         return;
       }
 
-      // Atualiza o localStorage com o nome/e-mail novos
+      // Atualiza o localStorage (nome e email no header)
       const usuarioAtualizado = {
         ...usuarioLogado,
         nome: form.nome,
@@ -192,8 +214,66 @@ function PerfilUsuario() {
       localStorage.setItem("usuario", JSON.stringify(usuarioAtualizado));
       window.dispatchEvent(new Event("usuarioAtualizado"));
 
-      alert("Perfil atualizado com sucesso!");
-      navigate("/");
+      // ============================================================
+      // 2) Atualiza a senha (se marcado)
+      // ============================================================
+      if (alterarSenha) {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setErro(
+            "Sessão expirada. Faça login novamente para alterar sua senha.",
+          );
+          setSalvando(false);
+          return;
+        }
+
+        const resSenha = await fetch(
+          `${API}/usuarios/${usuarioLogado.id_usuario}/senha`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              senha_atual: form.senha_atual,
+              senha_nova: form.novaSenha,
+            }),
+          },
+        );
+
+        if (!resSenha.ok) {
+          const err = await resSenha.json().catch(() => ({}));
+          const msg =
+            typeof err.detail === "string"
+              ? err.detail
+              : "Falha ao alterar a senha.";
+          // ⚠️ dados cadastrais já foram salvos → avisa o usuário
+          setErro(
+            `Dados cadastrais atualizados, mas a senha NÃO foi alterada: ${msg}`,
+          );
+          setSalvando(false);
+          return;
+        }
+
+        // Limpa os campos de senha após sucesso
+        setForm((prev) => ({
+          ...prev,
+          senha_atual: "",
+          novaSenha: "",
+          confirmarSenha: "",
+        }));
+        setAlterarSenha(false);
+      }
+
+      setSucesso(
+        alterarSenha
+          ? "Dados e senha atualizados com sucesso!"
+          : "Perfil atualizado com sucesso!",
+      );
+
+      // Redireciona após 1.2s pra dar tempo do usuário ler
+      setTimeout(() => navigate("/"), 1200);
     } catch (err) {
       console.error(err);
       setErro("Erro de conexão com o servidor.");
@@ -239,6 +319,13 @@ function PerfilUsuario() {
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span className="break-words">{erro}</span>
+            </div>
+          )}
+
+          {sucesso && (
+            <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs rounded-xl flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+              <span className="break-words">{sucesso}</span>
             </div>
           )}
 
@@ -349,15 +436,39 @@ function PerfilUsuario() {
               </div>
             </div>
 
+            <div className="pt-2 flex items-center">
+              <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  name="voluntario"
+                  checked={form.voluntario}
+                  onChange={handleChange}
+                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                />
+                Desejo ser Voluntário
+              </label>
+            </div>
+
             {/* ALTERAR SENHA */}
             <div className="pt-4 border-t border-slate-100">
               <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-slate-700 mb-3">
                 <input
                   type="checkbox"
                   checked={alterarSenha}
-                  onChange={(e) => setAlterarSenha(e.target.checked)}
+                  onChange={(e) => {
+                    setAlterarSenha(e.target.checked);
+                    if (!e.target.checked) {
+                      setForm((p) => ({
+                        ...p,
+                        senha_atual: "",
+                        novaSenha: "",
+                        confirmarSenha: "",
+                      }));
+                    }
+                  }}
                   className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
                 />
+                <KeyRound className="w-4 h-4 text-slate-500" />
                 Alterar minha senha
               </label>
 
@@ -365,7 +476,35 @@ function PerfilUsuario() {
                 <div className="space-y-3 pl-6">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Nova senha
+                      Senha atual <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={mostrarSenhaAtual ? "text" : "password"}
+                        name="senha_atual"
+                        value={form.senha_atual}
+                        onChange={handleChange}
+                        required
+                        placeholder="Digite sua senha atual"
+                        className={inputCls}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setMostrarSenhaAtual((v) => !v)}
+                        className="absolute right-3 top-3 text-slate-500 hover:text-slate-700 cursor-pointer"
+                      >
+                        {mostrarSenhaAtual ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Nova senha <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <input
@@ -373,6 +512,7 @@ function PerfilUsuario() {
                         name="novaSenha"
                         value={form.novaSenha}
                         onChange={handleChange}
+                        required
                         placeholder="Crie uma senha forte"
                         className={inputCls}
                       />
@@ -390,24 +530,28 @@ function PerfilUsuario() {
                     </div>
                     {form.novaSenha && <TabelaSenha forca={forca} />}
                   </div>
+
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Confirmar nova senha
+                      Confirmar nova senha{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <input
                       type={mostrarSenha ? "text" : "password"}
                       name="confirmarSenha"
                       value={form.confirmarSenha}
                       onChange={handleChange}
+                      required
                       placeholder="Repita a nova senha"
                       className={inputCls}
                     />
+                    {form.confirmarSenha &&
+                      form.novaSenha !== form.confirmarSenha && (
+                        <p className="text-[11px] text-red-600 mt-1">
+                          As senhas não conferem.
+                        </p>
+                      )}
                   </div>
-                  <p className="text-[11px] text-slate-500">
-                    ⚠️ A alteração de senha pelo próprio perfil exige endpoint
-                    adicional no backend. Por enquanto o formulário está pronto
-                    para integração futura.
-                  </p>
                 </div>
               )}
             </div>
@@ -422,8 +566,9 @@ function PerfilUsuario() {
               <button
                 type="submit"
                 disabled={salvando}
-                className="w-1/2 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                className="w-1/2 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5"
               >
+                {salvando && <Loader2 className="w-4 h-4 animate-spin" />}
                 {salvando ? "Salvando..." : "Salvar Alterações"}
               </button>
             </div>
