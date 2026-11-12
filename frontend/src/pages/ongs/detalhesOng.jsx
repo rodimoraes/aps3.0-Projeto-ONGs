@@ -43,12 +43,10 @@ function DetalhesOng() {
   // Voltar para a página anterior (ou /explorar-ongs se abriu direto)
   // ------------------------------------------------------------
   const handleVoltar = () => {
-    // location.key === "default" significa que esta é a primeira página
-    // carregada no app (usuário abriu a URL direto ou deu F5).
-    if (location.key === "default") {
-      navigate("/explorar-ongs");
+    if (usuarioLogado) {
+      navigate("/ongs");
     } else {
-      navigate(-1);
+      navigate("/explorar-ongs");
     }
   };
 

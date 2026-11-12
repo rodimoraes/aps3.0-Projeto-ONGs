@@ -38,28 +38,12 @@ class OngSchema(BaseModel):
 
 
 # ============================================================
-# CREATE — requer login. Só pode ter 1 ONG por representante.
+# CREATE — requer login. Agora permite MULTIPLAS ONGs por usuário.
 # ============================================================
 @router.post("")
 def cadastrar_ong(ong: OngSchema, usuario_atual: dict = Depends(obter_usuario_atual)):
     try:
         conexao = get_db_connection()
-        cursor = conexao.cursor(dictionary=True)
-
-        # Verifica se o usuário já é representante de alguma ONG
-        cursor.execute(
-            "SELECT id_ong FROM ong WHERE id_usuario_representante = %s",
-            (usuario_atual["id_usuario"],)
-        )
-        if cursor.fetchone():
-            cursor.close()
-            conexao.close()
-            raise HTTPException(
-                status_code=400,
-                detail="Você já é representante de uma ONG. Não é possível cadastrar outra."
-            )
-
-        cursor.close()
         cursor = conexao.cursor()
 
         sql = """
@@ -88,7 +72,7 @@ def cadastrar_ong(ong: OngSchema, usuario_atual: dict = Depends(obter_usuario_at
         cursor.execute(sql, valores)
         novo_id = cursor.lastrowid
 
-        # Marca o usuário como representante
+        # Marca o usuário como representante (possui pelo menos uma ONG)
         cursor.execute(
             "UPDATE usuario SET representante_ong = TRUE WHERE id_usuario = %s",
             (usuario_atual["id_usuario"],)
@@ -243,13 +227,20 @@ def deletar_ong(id_ong: int, usuario_atual: dict = Depends(obter_usuario_atual))
         cursor.close()
         cursor = conexao.cursor()
 
-        # Desmarca o usuário como representante
+        cursor.execute("DELETE FROM ong WHERE id_ong = %s", (id_ong,))
+
+        # Verifica se o usuário ainda tem outras ONGs. Se não tiver, desmarca.
         cursor.execute(
-            "UPDATE usuario SET representante_ong = FALSE WHERE id_usuario = %s",
+            "SELECT COUNT(*) as total FROM ong WHERE id_usuario_representante = %s",
             (usuario_atual["id_usuario"],)
         )
+        restantes = cursor.fetchone()[0]
+        if restantes == 0:
+            cursor.execute(
+                "UPDATE usuario SET representante_ong = FALSE WHERE id_usuario = %s",
+                (usuario_atual["id_usuario"],)
+            )
 
-        cursor.execute("DELETE FROM ong WHERE id_ong = %s", (id_ong,))
         conexao.commit()
         cursor.close()
         conexao.close()

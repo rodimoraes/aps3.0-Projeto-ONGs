@@ -7,6 +7,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import Home from "./pages/home";
 import Login from "./pages/login";
 import ExplorarOngs from "./pages/explorarOngs";
+import PerfilUsuario from "./pages/perfilUsuario";
 
 import CadastrarUsuario from "./pages/usuario/cadastrarUsuario";
 import ListarUsuarios from "./pages/usuario/ListarUsuarios";
@@ -33,6 +34,7 @@ createRoot(document.getElementById("root")).render(
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/perfil" element={<PerfilUsuario />} />
         <Route path="/explorar-ongs" element={<ExplorarOngs />} />
         <Route path="/cadastrar-ong" element={<CadastrarOng />} />
         <Route path="/ongs" element={<ListarOngs />} />
@@ -52,7 +54,7 @@ createRoot(document.getElementById("root")).render(
         />
         <Route path="/campanhas/:id_campanha" element={<DetalhesCampanha />} />
         <Route path="/ongs/:id_ong/imagens" element={<GerenciarImagens />} />
-        <Route path="/ongs/:id_ong/dashboard" element={<DashboardOng />} />{" "}
+        <Route path="/ongs/:id_ong/dashboard" element={<DashboardOng />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

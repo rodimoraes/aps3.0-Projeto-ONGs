@@ -49,20 +49,11 @@ function CadastrarOng() {
   const navigate = useNavigate();
   const usuarioLogado = JSON.parse(localStorage.getItem("usuario") || "null");
 
-  // ============================================================
-  // Guard de acesso: precisa estar logado e NÃO ser representante
-  // ============================================================
+  // Guard de acesso: apenas precisa estar logado (múltiplas ONGs permitidas)
   useEffect(() => {
     if (!usuarioLogado) {
       alert("Você precisa estar logado para cadastrar uma ONG!");
       navigate("/login", { state: { redirectTo: "/cadastrar-ong" } });
-      return;
-    }
-    if (usuarioLogado.representante_ong) {
-      alert(
-        "Você já é representante de uma ONG. Não é possível cadastrar outra.",
-      );
-      navigate("/ongs");
     }
   }, []);
 
@@ -213,14 +204,12 @@ function CadastrarOng() {
       });
 
       if (response.ok) {
-        // Atualiza o usuário no localStorage → agora é representante
+        // Atualiza o usuário no localStorage (marca como representante)
         const usuarioAtualizado = { ...usuarioLogado, representante_ong: true };
         localStorage.setItem("usuario", JSON.stringify(usuarioAtualizado));
         window.dispatchEvent(new Event("usuarioAtualizado"));
 
-        alert(
-          "ONG cadastrada com sucesso! Você agora é representante desta ONG.",
-        );
+        alert("ONG cadastrada com sucesso!");
         navigate("/ongs");
       } else {
         const err = await response.json();
@@ -241,21 +230,22 @@ function CadastrarOng() {
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-0">
-      <Header/>
+      <Header />
       <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xs border border-slate-200 p-6 sm:p-8">
         <Link
           to="/ongs"
           className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-700 font-medium mb-6 text-sm transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Voltar para a Lista</span>
+          <span>Voltar para Minhas ONGs</span>
         </Link>
 
         <h1 className="text-2xl font-bold text-slate-800 mb-1">
           Cadastrar Nova ONG
         </h1>
         <p className="text-xs text-slate-500 mb-6">
-          Você será registrado(a) como representante desta ONG.
+          Você será registrado(a) como representante desta ONG. Você pode
+          cadastrar quantas ONGs quiser.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
