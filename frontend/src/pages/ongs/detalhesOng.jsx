@@ -131,7 +131,7 @@ function DetalhesOng() {
   const totalArrecadado = campanhas
     .filter((c) => Number(c.id_tipo_campanha) === 1)
     .reduce((acc, c) => acc + Number(c.valor_arrecadado || 0), 0);
-  
+
   // Calcula o número total de voluntários inscritos (id_tipo_campanha === 2)
   const totalVoluntarios = campanhas
     .filter((c) => Number(c.id_tipo_campanha) === 2)
@@ -225,7 +225,8 @@ function DetalhesOng() {
                     alt={ong.nome}
                     className="w-full h-full object-cover rounded-xl"
                     onError={(e) => {
-                      e.target.src = "https://via.placeholder.com/150?text=ONG";
+                      e.target.src =
+                        "https://placehold.co/300x200/94a3b8/ffffff?text=Foto";
                     }}
                   />
                 ) : (
@@ -403,7 +404,7 @@ function DetalhesOng() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => {
                       e.target.src =
-                        "https://via.placeholder.com/300x200?text=Foto";
+                        "https://placehold.co/150x150/94a3b8/ffffff?text=ONG";
                     }}
                   />
                   <div
@@ -486,14 +487,22 @@ function DetalhesOng() {
                         <div className="space-y-1.5 mb-4">
                           <div className="flex justify-between text-xs font-semibold text-slate-700">
                             <span>Progresso</span>
-                            <span className={ehVoluntariado ? "text-purple-700" : "text-emerald-700"}>
+                            <span
+                              className={
+                                ehVoluntariado
+                                  ? "text-purple-700"
+                                  : "text-emerald-700"
+                              }
+                            >
                               {percentual}%
                             </span>
                           </div>
                           <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
                             <div
                               className={`h-2 rounded-full transition-all duration-500 ${
-                                ehVoluntariado ? "bg-purple-600" : "bg-emerald-500"
+                                ehVoluntariado
+                                  ? "bg-purple-600"
+                                  : "bg-emerald-500"
                               }`}
                               style={{ width: `${percentual}%` }}
                             />
@@ -517,7 +526,8 @@ function DetalhesOng() {
                                 Inscritos
                               </p>
                               <p className="font-bold text-purple-700">
-                                {atual} {atual === 1 ? "voluntário" : "voluntários"}
+                                {atual}{" "}
+                                {atual === 1 ? "voluntário" : "voluntários"}
                               </p>
                             </div>
                           </>

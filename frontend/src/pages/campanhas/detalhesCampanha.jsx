@@ -575,7 +575,7 @@ function DetalhesCampanha() {
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
                     onError={(e) => {
                       e.target.src =
-                        "https://via.placeholder.com/300x200?text=Foto";
+                        "https://placehold.co/300x200/94a3b8/ffffff?text=Foto";
                     }}
                   />
                   <div

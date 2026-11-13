@@ -11,21 +11,24 @@ function Home() {
   const carouselSlides = [
     {
       id: 1,
-      image: "https://images.pexels.com/photos/6646868/pexels-photo-6646868.jpeg",
+      image:
+        "https://images.pexels.com/photos/6646868/pexels-photo-6646868.jpeg",
       title: "Conecte-se com causas que transformam vidas",
       subtitle:
         "Descubra ONGs sérias perto de você, conheça seus projetos e encontre a melhor forma de ajudar — seja doando tempo, recursos ou visibilidade.",
     },
     {
       id: 2,
-      image: "https://images.pexels.com/photos/7156157/pexels-photo-7156157.jpeg",
+      image:
+        "https://images.pexels.com/photos/7156157/pexels-photo-7156157.jpeg",
       title: "Encontre a ONG certa para você apoiar",
       subtitle:
         "Explore organizações por causa, cidade e categoria. Compare campanhas ativas, acompanhe metas e escolha quem faz sentido para o seu propósito.",
     },
     {
       id: 3,
-      image: "https://images.pexels.com/photos/7469220/pexels-photo-7469220.jpeg",
+      image:
+        "https://images.pexels.com/photos/7469220/pexels-photo-7469220.jpeg",
       title: "Sua ONG também pode estar aqui",
       subtitle:
         "Cadastre sua organização em minutos, divulgue campanhas de arrecadação e voluntariado, e conecte-se a uma rede de pessoas prontas para ajudar.",
@@ -136,10 +139,6 @@ function Home() {
                     <span>Conhecer ONGs</span>
                     <ArrowRight className="w-5 h-5" />
                   </Link>
-                  <button className="flex items-center gap-2 px-6 py-3 font-semibold text-slate-200 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 rounded-xl transition-all cursor-pointer">
-                    <Heart className="w-5 h-5 text-rose-500 fill-rose-500/20" />
-                    <span>Fazer Doação</span>
-                  </button>
                 </div>
               </div>
             </div>
@@ -235,7 +234,7 @@ function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {ongsDestaque.map((ong) => {
               const imagemBase =
-                ong.imagemUrl || ong.banner_url || ong.logo_url || PLACEHOLDER;
+                ong.banner_url || ong.imagemUrl || ong.logo_url || PLACEHOLDER;
               return (
                 <div
                   key={ong.id_ong}

@@ -202,7 +202,7 @@ function ListarOngs() {
                             className="w-full h-full object-cover rounded-xl"
                             onError={(e) =>
                               (e.target.src =
-                                "https://via.placeholder.com/100?text=ONG")
+                                "https://placehold.co/100x100/94a3b8/ffffff?text=ONG")
                             }
                           />
                         ) : (

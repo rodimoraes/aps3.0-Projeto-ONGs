@@ -6,6 +6,8 @@ Popula o banco de dados bd_encontreong com um ecossistema COMPLETO de teste:
 - 45 Campanhas (cada ONG com 1 a 4 campanhas)
 - Inscrições de voluntários e Galeria de Imagens.
 
+Imagens: Fotos reais estáticas do Unsplash.
+
 Uso:
     cd backend
     python seed.py
@@ -141,39 +143,195 @@ def seed_usuarios(cursor):
 
 
 # ============================================================
-# ONGs (20)
+# ONGs (20) — Fotos Reais do Unsplash
 # ============================================================
 def seed_ongs(cursor):
-    print("🏢  Inserindo 20 ONGs...")
-    
+    print("🏢  Inserindo 20 ONGs (com fotos reais)...")
+
     ongs = [
         # Categoria 1 - Educação / Assistência
-        ("Instituto Esperança", "https://picsum.photos/seed/ong1/200/200", "https://picsum.photos/seed/bg1/1200/400", 11, 1, "(11) 3000-0001", "Av. Paulista, 1000 - Bela Vista - São Paulo/SP", "Instituto Esperança de Assistência Social", "IE", "Promover assistência social a famílias em situação de vulnerabilidade.", "11.111.111/0001-11", "9430-8/00", "1111111", "PIX: contato@esperanca.org.br"),
-        ("Educação para o Futuro", "https://picsum.photos/seed/ong2/200/200", "https://picsum.photos/seed/bg2/1200/400", 15, 1, "(81) 3000-0002", "Av. Boa Viagem, 2000 - Boa Viagem - Recife/PE", "Educação para o Futuro Organização Social", "EPF", "Oferecer educação de qualidade e oportunidades para crianças e jovens.", "22.222.222/0001-22", "8513-9/00", "2222222", "Doe material escolar | Voluntariado em reforço"),
-        ("Amigos do Bem", "https://picsum.photos/seed/ong3/200/200", "https://picsum.photos/seed/bg3/1200/400", 16, 1, "(85) 3000-0003", "Rua K, 1100 - Aldeota - Fortaleza/CE", "Associação Amigos do Bem", "ADB", "Combate à pobreza e à fome no sertão nordestino.", "33.333.333/0001-33", "9430-8/00", "3333333", "Seja padrinho de uma criança | Doações de cestas"),
-        ("Lar das Crianças", "https://picsum.photos/seed/ong4/200/200", "https://picsum.photos/seed/bg4/1200/400", 19, 1, "(11) 3000-0004", "Rua N, 1400 - Moema - São Paulo/SP", "Lar das Crianças Felizes", "LCF", "Acolhimento e educação para crianças em risco social.", "44.444.444/0001-44", "8711-5/01", "4444444", "Doações de roupas e brinquedos | Voluntariado aos fins de semana"),
-        ("Mãos Unidas", "https://picsum.photos/seed/ong5/200/200", "https://picsum.photos/seed/bg5/1200/400", 17, 1, "(62) 3000-0005", "Rua L, 1200 - Setor Bueno - Goiânia/GO", "Mãos Unidas Assistência Social", "MUAS", "Apoio a idosos e pessoas com deficiência.", "55.555.555/0001-55", "8730-1/01", "5555555", "Visitas a asilos | Doações de fraldas geriátricas"),
-        
+        ("Instituto Esperança",
+         "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=1200&h=400&fit=crop",
+         11, 1, "(11) 3000-0001", "Av. Paulista, 1000 - Bela Vista - São Paulo/SP",
+         "Instituto Esperança de Assistência Social", "IE",
+         "Promover assistência social a famílias em situação de vulnerabilidade.",
+         "11.111.111/0001-11", "9430-8/00", "1111111",
+         "PIX: contato@esperanca.org.br"),
+
+        ("Educação para o Futuro",
+         "https://images.unsplash.com/photo-1577896851231-70ef18881754?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=1200&h=400&fit=crop",
+         15, 1, "(81) 3000-0002", "Av. Boa Viagem, 2000 - Boa Viagem - Recife/PE",
+         "Educação para o Futuro Organização Social", "EPF",
+         "Oferecer educação de qualidade e oportunidades para crianças e jovens.",
+         "22.222.222/0001-22", "8513-9/00", "2222222",
+         "Doe material escolar | Voluntariado em reforço"),
+
+        ("Amigos do Bem",
+         "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1200&h=400&fit=crop",
+         16, 1, "(85) 3000-0003", "Rua K, 1100 - Aldeota - Fortaleza/CE",
+         "Associação Amigos do Bem", "ADB",
+         "Combate à pobreza e à fome no sertão nordestino.",
+         "33.333.333/0001-33", "9430-8/00", "3333333",
+         "Seja padrinho de uma criança | Doações de cestas"),
+
+        ("Lar das Crianças",
+         "https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?w=1200&h=400&fit=crop",
+         19, 1, "(11) 3000-0004", "Rua N, 1400 - Moema - São Paulo/SP",
+         "Lar das Crianças Felizes", "LCF",
+         "Acolhimento e educação para crianças em risco social.",
+         "44.444.444/0001-44", "8711-5/01", "4444444",
+         "Doações de roupas e brinquedos | Voluntariado aos fins de semana"),
+
+        ("Mãos Unidas",
+         "https://images.unsplash.com/photo-1518398046578-8cca57782e17?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&h=400&fit=crop",
+         17, 1, "(62) 3000-0005", "Rua L, 1200 - Setor Bueno - Goiânia/GO",
+         "Mãos Unidas Assistência Social", "MUAS",
+         "Apoio a idosos e pessoas com deficiência.",
+         "55.555.555/0001-55", "8730-1/01", "5555555",
+         "Visitas a asilos | Doações de fraldas geriátricas"),
+
         # Categoria 2 - Meio Ambiente
-        ("Verde Vivo", "https://picsum.photos/seed/ong6/200/200", "https://picsum.photos/seed/bg6/1200/400", 12, 2, "(21) 3000-0006", "Rua das Palmeiras, 250 - Lagoa - Rio de Janeiro/RJ", "Verde Vivo Instituto de Preservação Ambiental", "VV", "Preservação ambiental e educação ecológica.", "66.666.666/0001-66", "0210-1/00", "6666666", "Mutirões de limpeza | Doe mudas nativas"),
-        ("SOS Mata Atlântica", "https://picsum.photos/seed/ong7/200/200", "https://picsum.photos/seed/bg7/1200/400", 17, 2, "(61) 3000-0007", "Rua M, 1300 - Asa Sul - Brasília/DF", "SOS Mata Atlântica Brasil", "SOSMA", "Defesa da floresta e da biodiversidade.", "77.777.777/0001-77", "0210-1/00", "7777777", "Adote uma árvore | Denuncie desmatamento"),
-        ("Oceano Limpo", "https://picsum.photos/seed/ong8/200/200", "https://picsum.photos/seed/bg8/1200/400", 20, 2, "(48) 3000-0008", "Rua O, 1500 - Trindade - Florianópolis/SC", "Instituto Oceano Limpo", "IOL", "Combate à poluição marinha e proteção de tartarugas.", "88.888.888/0001-88", "0210-1/00", "8888888", "Participe dos mutirões de praia | Doe para o resgate de animais"),
-        ("Recicla Mais", "https://picsum.photos/seed/ong9/200/200", "https://picsum.photos/seed/bg9/1200/400", 16, 2, "(85) 3000-0009", "Rua K, 1100 - Aldeota - Fortaleza/CE", "Cooperativa Recicla Mais", "RCM", "Educação ambiental e apoio a catadores de recicláveis.", "99.999.999/0001-99", "3831-7/00", "9999999", "Doe seus recicláveis em nossos pontos de coleta"),
-        ("Amazônia Protegida", "https://picsum.photos/seed/ong10/200/200", "https://picsum.photos/seed/bg10/1200/400", 18, 2, "(61) 3000-0010", "Rua M, 1300 - Asa Sul - Brasília/DF", "Movimento Amazônia Protegida", "MAP", "Proteção das comunidades indígenas e da floresta.", "10.101.101/0001-10", "0210-1/00", "1010101", "Assine petições | Doe para projetos de reflorestamento"),
+        ("Verde Vivo",
+         "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1200&h=400&fit=crop",
+         12, 2, "(21) 3000-0006", "Rua das Palmeiras, 250 - Lagoa - Rio de Janeiro/RJ",
+         "Verde Vivo Instituto de Preservação Ambiental", "VV",
+         "Preservação ambiental e educação ecológica.",
+         "66.666.666/0001-66", "0210-1/00", "6666666",
+         "Mutirões de limpeza | Doe mudas nativas"),
+
+        ("SOS Mata Atlântica",
+         "https://images.unsplash.com/photo-1511497584788-876760111969?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1448375240586-882707db888b?w=1200&h=400&fit=crop",
+         17, 2, "(61) 3000-0007", "Rua M, 1300 - Asa Sul - Brasília/DF",
+         "SOS Mata Atlântica Brasil", "SOSMA",
+         "Defesa da floresta e da biodiversidade.",
+         "77.777.777/0001-77", "0210-1/00", "7777777",
+         "Adote uma árvore | Denuncie desmatamento"),
+
+        ("Oceano Limpo",
+         "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1497436072909-60f360e1d4b1?w=1200&h=400&fit=crop",
+         20, 2, "(48) 3000-0008", "Rua O, 1500 - Trindade - Florianópolis/SC",
+         "Instituto Oceano Limpo", "IOL",
+         "Combate à poluição marinha e proteção de tartarugas.",
+         "88.888.888/0001-88", "0210-1/00", "8888888",
+         "Participe dos mutirões de praia | Doe para o resgate de animais"),
+
+        ("Recicla Mais",
+         "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1605600659908-0ef719419d41?w=1200&h=400&fit=crop",
+         16, 2, "(85) 3000-0009", "Rua K, 1100 - Aldeota - Fortaleza/CE",
+         "Cooperativa Recicla Mais", "RCM",
+         "Educação ambiental e apoio a catadores de recicláveis.",
+         "99.999.999/0001-99", "3831-7/00", "9999999",
+         "Doe seus recicláveis em nossos pontos de coleta"),
+
+        ("Amazônia Protegida",
+         "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1599740482625-9e82e0fb2874?w=1200&h=400&fit=crop",
+         18, 2, "(61) 3000-0010", "Rua M, 1300 - Asa Sul - Brasília/DF",
+         "Movimento Amazônia Protegida", "MAP",
+         "Proteção das comunidades indígenas e da floresta.",
+         "10.101.101/0001-10", "0210-1/00", "1010101",
+         "Assine petições | Doe para projetos de reflorestamento"),
 
         # Categoria 3 - Saúde
-        ("Saúde para Todos", "https://picsum.photos/seed/ong11/200/200", "https://picsum.photos/seed/bg11/1200/400", 13, 3, "(31) 3000-0011", "Rua E, 500 - Savassi - Belo Horizonte/MG", "Saúde para Todos Associação Beneficente", "SPT", "Promoção da saúde e bem-estar em comunidades carentes.", "11.222.333/0001-44", "8610-1/01", "1122334", "Doações de medicamentos | Voluntariado em campanhas"),
-        ("Médicos da Rua", "https://picsum.photos/seed/ong12/200/200", "https://picsum.photos/seed/bg12/1200/400", 14, 3, "(71) 3000-0012", "Rua I, 900 - Barra - Salvador/BA", "Médicos da Rua Brasil", "MRB", "Atendimento médico gratuito à população em situação de rua.", "22.333.444/0001-55", "8610-1/01", "2233445", "Seja médico voluntário | Doe kits de higiene"),
-        ("Rede Feminina", "https://picsum.photos/seed/ong13/200/200", "https://picsum.photos/seed/bg13/1200/400", 19, 3, "(11) 3000-0013", "Rua N, 1400 - Moema - São Paulo/SP", "Rede Feminina de Apoio à Saúde", "RFAS", "Prevenção ao câncer de mama e apoio a mulheres.", "33.444.555/0001-66", "8610-1/01", "3344556", "Doe cabelos | Participe das caminhadas do Outubro Rosa"),
-        ("Doe Sangue", "https://picsum.photos/seed/ong14/200/200", "https://picsum.photos/seed/bg14/1200/400", 15, 3, "(81) 3000-0014", "Av. Boa Viagem, 2000 - Boa Viagem - Recife/PE", "Associação Doe Sangue", "ADS", "Mobilização de doadores de sangue para hemocentros.", "44.555.666/0001-77", "8610-1/01", "4455667", "Seja um doador de sangue frequente"),
-        ("Mental Vida", "https://picsum.photos/seed/ong15/200/200", "https://picsum.photos/seed/bg15/1200/400", 11, 3, "(11) 3000-0015", "Av. Paulista, 1000 - Bela Vista - São Paulo/SP", "Instituto Mental Vida", "IMV", "Apoio psicológico gratuito e prevenção ao suicídio.", "55.666.777/0001-88", "8650-0/01", "5566778", "Voluntariado em escuta ativa | Doe para manter o atendimento"),
+        ("Saúde para Todos",
+         "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?w=1200&h=400&fit=crop",
+         13, 3, "(31) 3000-0011", "Rua E, 500 - Savassi - Belo Horizonte/MG",
+         "Saúde para Todos Associação Beneficente", "SPT",
+         "Promoção da saúde e bem-estar em comunidades carentes.",
+         "11.222.333/0001-44", "8610-1/01", "1122334",
+         "Doações de medicamentos | Voluntariado em campanhas"),
+
+        ("Médicos da Rua",
+         "https://images.unsplash.com/photo-1584515933487-779824d29309?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1584982751601-97dcc096659c?w=1200&h=400&fit=crop",
+         14, 3, "(71) 3000-0012", "Rua I, 900 - Barra - Salvador/BA",
+         "Médicos da Rua Brasil", "MRB",
+         "Atendimento médico gratuito à população em situação de rua.",
+         "22.333.444/0001-55", "8610-1/01", "2233445",
+         "Seja médico voluntário | Doe kits de higiene"),
+
+        ("Rede Feminina",
+         "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1599058917212-d750089bc07e?w=1200&h=400&fit=crop",
+         19, 3, "(11) 3000-0013", "Rua N, 1400 - Moema - São Paulo/SP",
+         "Rede Feminina de Apoio à Saúde", "RFAS",
+         "Prevenção ao câncer de mama e apoio a mulheres.",
+         "33.444.555/0001-66", "8610-1/01", "3344556",
+         "Doe cabelos | Participe das caminhadas do Outubro Rosa"),
+
+        ("Doe Sangue",
+         "https://images.unsplash.com/photo-1615461066841-6116e61058f4?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1579154204601-01588f351e67?w=1200&h=400&fit=crop",
+         15, 3, "(81) 3000-0014", "Av. Boa Viagem, 2000 - Boa Viagem - Recife/PE",
+         "Associação Doe Sangue", "ADS",
+         "Mobilização de doadores de sangue para hemocentros.",
+         "44.555.666/0001-77", "8610-1/01", "4455667",
+         "Seja um doador de sangue frequente"),
+
+        ("Mental Vida",
+         "https://images.unsplash.com/photo-1527137342181-19aab11a8ee8?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1493836512294-502baa1986e2?w=1200&h=400&fit=crop",
+         11, 3, "(11) 3000-0015", "Av. Paulista, 1000 - Bela Vista - São Paulo/SP",
+         "Instituto Mental Vida", "IMV",
+         "Apoio psicológico gratuito e prevenção ao suicídio.",
+         "55.666.777/0001-88", "8650-0/01", "5566778",
+         "Voluntariado em escuta ativa | Doe para manter o atendimento"),
 
         # Categoria 4 - Cultura / Esporte
-        ("Cultura Viva", "https://picsum.photos/seed/ong16/200/200", "https://picsum.photos/seed/bg16/1200/400", 14, 4, "(71) 3000-0016", "Rua I, 900 - Barra - Salvador/BA", "Cultura Viva Instituto de Arte e Cultura", "CV", "Fomentar a cultura e a arte como ferramentas de transformação social.", "66.777.888/0001-99", "8599-6/04", "6677889", "Doe instrumentos musicais | Seja professor voluntário"),
-        ("Orquestra da Favela", "https://picsum.photos/seed/ong17/200/200", "https://picsum.photos/seed/bg17/1200/400", 12, 4, "(21) 3000-0017", "Rua das Palmeiras, 250 - Lagoa - Rio de Janeiro/RJ", "Orquestra da Favela", "OF", "Ensino de música clássica para jovens de comunidades.", "77.888.999/0001-10", "8592-9/03", "7788990", "Apadrinhe um músico | Doe instrumentos"),
-        ("Esporte para Todos", "https://picsum.photos/seed/ong18/200/200", "https://picsum.photos/seed/bg18/1200/400", 13, 4, "(31) 3000-0018", "Rua E, 500 - Savassi - Belo Horizonte/MG", "Esporte para Todos", "EPT", "Inclusão social através do esporte e lazer.", "88.999.000/0001-21", "9319-1/01", "8899001", "Doe materiais esportivos | Seja treinador voluntário"),
-        ("Arte na Rua", "https://picsum.photos/seed/ong19/200/200", "https://picsum.photos/seed/bg19/1200/400", 20, 4, "(48) 3000-0019", "Rua O, 1500 - Trindade - Florianópolis/SC", "Coletivo Arte na Rua", "CAR", "Intervenções artísticas e grafite em espaços públicos.", "99.000.111/0001-32", "8599-6/04", "9900112", "Doe tintas e materiais | Participe dos mutirões de pintura"),
-        ("Teatro do Oprimido", "https://picsum.photos/seed/ong20/200/200", "https://picsum.photos/seed/bg20/1200/400", 18, 4, "(61) 3000-0020", "Rua M, 1300 - Asa Sul - Brasília/DF", "Grupo Teatro do Oprimido", "GTO", "Uso do teatro como ferramenta de diálogo e transformação social.", "00.111.222/0001-43", "8599-6/04", "0011223", "Seja ator voluntário | Doe figurinos e cenários"),
+        ("Cultura Viva",
+         "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=1200&h=400&fit=crop",
+         14, 4, "(71) 3000-0016", "Rua I, 900 - Barra - Salvador/BA",
+         "Cultura Viva Instituto de Arte e Cultura", "CV",
+         "Fomentar a cultura e a arte como ferramentas de transformação social.",
+         "66.777.888/0001-99", "8599-6/04", "6677889",
+         "Doe instrumentos musicais | Seja professor voluntário"),
+
+        ("Orquestra da Favela",
+         "https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=1200&h=400&fit=crop",
+         12, 4, "(21) 3000-0017", "Rua das Palmeiras, 250 - Lagoa - Rio de Janeiro/RJ",
+         "Orquestra da Favela", "OF",
+         "Ensino de música clássica para jovens de comunidades.",
+         "77.888.999/0001-10", "8592-9/03", "7788990",
+         "Apadrinhe um músico | Doe instrumentos"),
+
+        ("Esporte para Todos",
+         "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1517649763962-0c623066013b?w=1200&h=400&fit=crop",
+         13, 4, "(31) 3000-0018", "Rua E, 500 - Savassi - Belo Horizonte/MG",
+         "Esporte para Todos", "EPT",
+         "Inclusão social através do esporte e lazer.",
+         "88.999.000/0001-21", "9319-1/01", "8899001",
+         "Doe materiais esportivos | Seja treinador voluntário"),
+
+        ("Arte na Rua",
+         "https://images.unsplash.com/photo-1499781350541-7783f6c6a0c8?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=1200&h=400&fit=crop",
+         20, 4, "(48) 3000-0019", "Rua O, 1500 - Trindade - Florianópolis/SC",
+         "Coletivo Arte na Rua", "CAR",
+         "Intervenções artísticas e grafite em espaços públicos.",
+         "99.000.111/0001-32", "8599-6/04", "9900112",
+         "Doe tintas e materiais | Participe dos mutirões de pintura"),
+
+        ("Teatro do Oprimido",
+         "https://images.unsplash.com/photo-1503095396549-807759245b35?w=200&h=200&fit=crop",
+         "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1200&h=400&fit=crop",
+         18, 4, "(61) 3000-0020", "Rua M, 1300 - Asa Sul - Brasília/DF",
+         "Grupo Teatro do Oprimido", "GTO",
+         "Uso do teatro como ferramenta de diálogo e transformação social.",
+         "00.111.222/0001-43", "8599-6/04", "0011223",
+         "Seja ator voluntário | Doe figurinos e cenários"),
     ]
 
     cursor.executemany(
@@ -198,42 +356,42 @@ def seed_campanhas(cursor):
         (1, 1, "Cesta Básica Solidária", "Arrecadação de alimentos para 500 famílias.", "2026-01-15", "2026-06-30", 50000.00, 23500.00, "ativa"),
         (1, 1, "Brinquedos de Natal", "Arrecadação de brinquedos para crianças carentes.", "2026-10-01", "2026-12-20", 10000.00, 3200.00, "ativa"),
         (1, 2, "Voluntários para Eventos", "Precisamos de voluntários para os eventos mensais.", "2026-02-01", "2026-12-31", 20.00, 0.00, "ativa"),
-        
+
         # ONG 2 (4 campanhas) -> IDs 4, 5, 6, 7
         (2, 1, "Material Escolar para Todos", "Arrecadação de material escolar para 300 crianças.", "2026-01-05", "2026-03-31", 25000.00, 25000.00, "encerrada"),
         (2, 2, "Aulas de Reforço Escolar", "Voluntários para reforço de matemática e português.", "2026-02-01", "2026-12-15", 30.00, 0.00, "ativa"),
         (2, 1, "Biblioteca Comunitária", "Construção de uma biblioteca com 2.000 livros.", "2026-06-01", "2026-12-31", 40000.00, 12000.00, "ativa"),
         (2, 1, "Computadores para o Futuro", "Arrecadação de laptops para laboratório de informática.", "2026-01-01", "2026-11-30", 35000.00, 5000.00, "ativa"),
-        
+
         # ONG 3 (2 campanhas) -> IDs 8, 9
         (3, 1, "Natal Sem Fome no Sertão", "Cestas básicas e água para famílias do sertão.", "2026-11-01", "2026-12-24", 80000.00, 15000.00, "ativa"),
         (3, 2, "Voluntários para Construção", "Mutirão para construir cisternas.", "2026-03-01", "2026-08-30", 15.00, 0.00, "ativa"),
-        
+
         # ONG 4 (2 campanhas) -> IDs 10, 11
         (4, 1, "Reforma do Lar", "Arrecadação para reformar o telhado do Lar das Crianças.", "2026-02-01", "2026-05-30", 15000.00, 15000.00, "encerrada"),
         (4, 2, "Contadores de Histórias", "Voluntários para ler histórias para as crianças.", "2026-01-01", "2026-12-31", 10.00, 0.00, "ativa"),
-        
+
         # ONG 5 (2 campanhas) -> IDs 12, 13
         (5, 1, "Fraldas Geriátricas", "Doações de fraldas para o asilo parceiro.", "2026-01-10", "2026-12-31", 12000.00, 4500.00, "ativa"),
         (5, 2, "Companhia para Idosos", "Voluntários para passar o dia com idosos.", "2026-02-15", "2026-12-31", 20.00, 0.00, "ativa"),
-        
+
         # ONG 6 (3 campanhas) -> IDs 14, 15, 16
         (6, 1, "Reflorestamento da Mata Atlântica", "Plantio de 5.000 mudas nativas.", "2026-03-01", "2026-09-30", 30000.00, 12800.00, "ativa"),
         (6, 2, "Mutirão de Limpeza nas Praias", "Ação mensal de limpeza nas praias do RJ.", "2026-01-10", "2026-12-20", 50.00, 0.00, "ativa"),
         (6, 1, "Adote uma Árvore", "Plante uma árvore no seu nome ou de alguém.", "2026-01-01", "2026-12-31", 5000.00, 1200.00, "ativa"),
-        
+
         # ONG 7 (2 campanhas) -> IDs 17, 18
         (7, 1, "Proteja a Floresta", "Arrecadação para compra de equipamentos de fiscalização.", "2026-02-01", "2026-12-31", 20000.00, 8000.00, "ativa"),
         (7, 2, "Guardiões da Mata", "Voluntários para monitorar áreas de desmatamento.", "2026-04-01", "2026-10-31", 10.00, 0.00, "ativa"),
-        
+
         # ONG 8 (2 campanhas) -> IDs 19, 20
         (8, 1, "Resgate de Tartarugas", "Doações para o centro de resgate de animais marinhos.", "2026-01-01", "2026-12-31", 25000.00, 10500.00, "ativa"),
         (8, 2, "Limpeza de Praia SC", "Mutirão de limpeza na praia da Joaquina.", "2026-02-01", "2026-03-30", 10.00, 0.00, "encerrada"),
-        
+
         # ONG 9 (2 campanhas) -> IDs 21, 22
         (9, 1, "Reciclagem Solidária", "Arrecadação de fundos para os catadores.", "2026-01-01", "2026-12-31", 15000.00, 3000.00, "ativa"),
         (9, 2, "Educação Ambiental", "Voluntários para palestras em escolas.", "2026-03-01", "2026-11-30", 10.00, 0.00, "ativa"),
-        
+
         # ONG 10 (2 campanhas) -> IDs 23, 24
         (10, 1, "Proteja a Amazônia", "Doações para projetos de preservação.", "2026-01-01", "2026-12-31", 50000.00, 32000.00, "ativa"),
         (10, 2, "Voluntariado Indígena", "Apoio em comunidades indígenas.", "2026-03-01", "2026-09-30", 15.00, 0.00, "ativa"),
@@ -242,19 +400,19 @@ def seed_campanhas(cursor):
         (11, 1, "Campanha do Agasalho 2026", "Arrecadação de roupas de frio.", "2026-04-01", "2026-08-31", 20000.00, 8900.00, "ativa"),
         (11, 2, "Doação de Sangue", "Mobilização de voluntários para doar sangue.", "2026-01-01", "2026-12-31", 100.00, 0.00, "ativa"),
         (11, 1, "Kits de Higiene", "Arrecadação de kits para moradores de rua.", "2026-01-01", "2026-12-31", 10000.00, 4000.00, "ativa"),
-        
+
         # ONG 12 (2 campanhas) -> IDs 28, 29
         (12, 1, "Remédios para Todos", "Doações de medicamentos básicos.", "2026-02-01", "2026-11-30", 30000.00, 15000.00, "ativa"),
         (12, 2, "Médicos Voluntários", "Cadastro de médicos para atendimento na rua.", "2026-01-01", "2026-12-31", 50.00, 0.00, "ativa"),
-        
+
         # ONG 13 (2 campanhas) -> IDs 30, 31
         (13, 1, "Outubro Rosa", "Arrecadação para exames de mamografia gratuitos.", "2026-09-01", "2026-10-31", 40000.00, 0.00, "ativa"),
         (13, 2, "Palestras nas Empresas", "Voluntárias para palestras sobre prevenção.", "2026-01-01", "2026-12-31", 10.00, 0.00, "ativa"),
-        
+
         # ONG 14 (2 campanhas) -> IDs 32, 33
         (14, 1, "Doadores de Sangue", "Meta de novos doadores cadastrados.", "2026-01-01", "2026-12-31", 500.00, 120.00, "ativa"),
         (14, 2, "Caravana da Doação", "Voluntários para ônibus de doação.", "2026-03-01", "2026-09-30", 10.00, 0.00, "ativa"),
-        
+
         # ONG 15 (2 campanhas) -> IDs 34, 35
         (15, 1, "Apoio Psicológico", "Manutenção do atendimento gratuito.", "2026-01-01", "2026-12-31", 20000.00, 8000.00, "ativa"),
         (15, 2, "Ouvir faz Bem", "Voluntários para escuta ativa.", "2026-02-01", "2026-12-31", 20.00, 0.00, "ativa"),
@@ -263,18 +421,18 @@ def seed_campanhas(cursor):
         (16, 1, "Instrumentos Musicais para Crianças", "Arrecadação para comprar instrumentos.", "2026-05-01", "2026-11-30", 15000.00, 5600.00, "ativa"),
         (16, 2, "Aulas de Música Voluntárias", "Professores voluntários para aulas semanais.", "2026-02-01", "2026-12-31", 15.00, 0.00, "ativa"),
         (16, 1, "Oficina de Teatro", "Materiais para oficinas de teatro.", "2026-01-01", "2026-12-31", 8000.00, 2000.00, "ativa"),
-        
+
         # ONG 17 (2 campanhas) -> IDs 39, 40
         (17, 1, "Apadrinhe um Músico", "Doação mensal para manter os estudos.", "2026-01-01", "2026-12-31", 30000.00, 12000.00, "ativa"),
         (17, 2, "Concerto Solidário", "Voluntários para organização do evento.", "2026-10-01", "2026-11-30", 20.00, 0.00, "ativa"),
-        
+
         # ONG 18 (2 campanhas) -> IDs 41, 42
         (18, 1, "Bolas e Redes", "Arrecadação de materiais esportivos.", "2026-02-01", "2026-10-31", 10000.00, 2500.00, "ativa"),
         (18, 2, "Treinadores Voluntários", "Voluntários para treinar os jovens.", "2026-01-01", "2026-12-31", 10.00, 0.00, "ativa"),
-        
+
         # ONG 19 (1 campanha) -> ID 43
         (19, 1, "Tintas para a Rua", "Arrecadação para mutirão de grafite.", "2026-03-01", "2026-06-30", 5000.00, 5000.00, "encerrada"),
-        
+
         # ONG 20 (2 campanhas) -> IDs 44, 45
         (20, 1, "Teatro na Praça", "Arrecadação para montagem de peças.", "2026-04-01", "2026-12-31", 12000.00, 3500.00, "ativa"),
         (20, 2, "Atores Voluntários", "Seletiva para atores amadores.", "2026-05-01", "2026-12-31", 10.00, 0.00, "ativa"),
@@ -296,8 +454,6 @@ def seed_campanhas(cursor):
 # ============================================================
 def seed_voluntarios(cursor):
     print("🙋  Inscrevendo voluntários em campanhas...")
-    # IDs válidos (1 a 45). Inscrições apenas em campanhas de Voluntariado (id_tipo = 2).
-    # Campanhas de Voluntariado: 3, 5, 9, 11, 13, 15, 18, 20, 22, 24, 26, 29, 31, 33, 35, 37, 40, 42, 45
     inscricoes = [
         (1, 3), (2, 3), (3, 3), (4, 3),
         (5, 5), (6, 5), (7, 5),
@@ -326,21 +482,52 @@ def seed_voluntarios(cursor):
 
 
 # ============================================================
-# IMAGENS
+# IMAGENS — Fotos reais do Unsplash para as Galerias
 # ============================================================
 def seed_imagens(cursor):
-    print("🖼️   Inserindo imagens nas galerias...")
+    print("🖼️   Inserindo imagens reais nas galerias...")
     imagens = []
-    
-    # Para cada ONG (1 a 20), adicionar 2 imagens de capa/galeria
+
+    # Lista expandida de fotos de ações sociais/voluntariado
+    acoes_sociais = [
+        "https://images.unsplash.com/photo-1593113589914-07599018dd2a?w=800&h=600&fit=crop",
+        "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&h=600&fit=crop",
+        "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=800&h=600&fit=crop",
+        "https://images.unsplash.com/photo-1526976668912-1a811878dd37?w=800&h=600&fit=crop",
+        "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=800&h=600&fit=crop",
+        "https://images.unsplash.com/photo-1509099836639-18ba1795216d?w=800&h=600&fit=crop",
+        "https://images.unsplash.com/photo-1532629345422-7515f3d16bb0?w=800&h=600&fit=crop",
+        "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=800&h=600&fit=crop",
+        "https://images.unsplash.com/photo-1524069290683-0457abfe42c3?w=800&h=600&fit=crop",
+        "https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=800&h=600&fit=crop",
+    ]
+
+    # Para cada ONG (1 a 20), adicionar 2 imagens de galeria
     for i in range(1, 21):
-        imagens.append((i, None, f"Foto da sede - ONG {i}", f"https://picsum.photos/seed/galeria_ong{i}/800/600"))
-        imagens.append((i, None, f"Equipe em ação - ONG {i}", f"https://picsum.photos/seed/acao_ong{i}/800/600"))
+        imagem1 = acoes_sociais[(i - 1) % len(acoes_sociais)]
+        imagem2 = acoes_sociais[(i + 2) % len(acoes_sociais)]
         
-    # Adicionar imagens específicas para algumas campanhas (IDs 1 a 45)
+        imagens.append((
+            i, None,
+            f"Foto da sede - ONG {i}",
+            # Adiciona '&v=...' para garantir que a URL seja única no banco de dados
+            f"{imagem1}&v=ong{i}a",
+        ))
+        imagens.append((
+            i, None,
+            f"Equipe em ação - ONG {i}",
+            f"{imagem2}&v=ong{i}b",
+        ))
+
+    # Adicionar imagens específicas para algumas campanhas
     campanhas_com_fotos = [1, 4, 6, 10, 14, 21, 25, 30, 36, 41]
     for c_id in campanhas_com_fotos:
-        imagens.append((None, c_id, f"Registro da campanha {c_id}", f"https://picsum.photos/seed/campanha_img{c_id}/800/600"))
+        imagem = acoes_sociais[(c_id * 3) % len(acoes_sociais)]
+        imagens.append((
+            None, c_id,
+            f"Registro da campanha {c_id}",
+            f"{imagem}&v=camp{c_id}",
+        ))
 
     cursor.executemany(
         "INSERT INTO imagem (id_ong, id_campanha, descricao, url) VALUES (%s, %s, %s, %s)",
@@ -356,6 +543,7 @@ def main():
     print("🌱  POPULANDO BANCO DE DADOS bd_encontreong (VERSAO ESTENDIDA)")
     print("=" * 65)
     print(f"🔑  Senha padrão de TODOS os usuários: {SENHA_PADRAO}")
+    print("🖼️   Imagens reais hospedadas no Unsplash")
     print()
 
     conexao = get_db()
