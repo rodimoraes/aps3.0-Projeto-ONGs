@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import Header from "../../components/header.jsx"
+import Header from "../../components/header.jsx";
+import { validarPeriodoCampanha } from "../../../js/validador";
+
 function EditarCampanha() {
   const { id_campanha } = useParams();
   const navigate = useNavigate();
+
   const [formCampanha, setFormCampanha] = useState({
     id_ong: "",
-    id_tipo_campanha: 1, // 1 = Arrecadação, 2 = Voluntariado
+    id_tipo_campanha: 1,
     titulo: "",
     descricao: "",
     data_inicio: "",
@@ -17,6 +20,16 @@ function EditarCampanha() {
     status: "ativa",
   });
   const [loading, setLoading] = useState(true);
+
+  // Validação ao vivo das datas
+  const periodoStatus = useMemo(() => {
+    if (!formCampanha.data_inicio) return { valid: true };
+    return validarPeriodoCampanha(
+      formCampanha.data_inicio,
+      formCampanha.data_fim,
+    );
+  }, [formCampanha.data_inicio, formCampanha.data_fim]);
+
   useEffect(() => {
     const carregarCampanha = async () => {
       try {
@@ -49,12 +62,25 @@ function EditarCampanha() {
     };
     carregarCampanha();
   }, [id_campanha, navigate]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormCampanha((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 🆕 VALIDAÇÃO DE DATAS
+    const periodo = validarPeriodoCampanha(
+      formCampanha.data_inicio,
+      formCampanha.data_fim,
+    );
+    if (!periodo.valid) {
+      alert(periodo.error);
+      return;
+    }
+
     const dadosFormatados = {
       id_ong: Number(formCampanha.id_ong),
       id_tipo_campanha: Number(formCampanha.id_tipo_campanha),
@@ -66,6 +92,7 @@ function EditarCampanha() {
       valor_arrecadado: Number(formCampanha.valor_arrecadado || 0),
       status: formCampanha.status,
     };
+
     try {
       const response = await fetch(
         `http://127.0.0.1:8000/campanhas/${id_campanha}`,
@@ -79,14 +106,28 @@ function EditarCampanha() {
         alert("Campanha atualizada com sucesso!");
         navigate(`/campanhas/${id_campanha}`);
       } else {
-        const errorData = await response.json();
-        alert(`Erro ao atualizar: ${JSON.stringify(errorData.detail)}`);
+        const err = await response.json().catch(() => ({}));
+        let msg = "Erro desconhecido.";
+        if (typeof err.detail === "string") {
+          msg = err.detail;
+        } else if (Array.isArray(err.detail)) {
+          msg = err.detail
+            .map((x) => {
+              let m = x.msg || "";
+              if (m.startsWith("Value error, "))
+                m = m.replace("Value error, ", "");
+              return m;
+            })
+            .join("\n");
+        }
+        alert(`Erro ao atualizar: ${msg}`);
       }
     } catch (error) {
       console.error("Erro na atualização:", error);
       alert("Não foi possível conectar ao servidor.");
     }
   };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -96,21 +137,23 @@ function EditarCampanha() {
       </div>
     );
   }
+
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-0">
       <Header />
       <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xs border border-slate-200 p-6 py-5 sm:p-8">
         <Link
           to={`/campanhas/${id_campanha}`}
-          className="inline-flex items-center gap-2 text-slate-600 hover:text-emerald-700
-font-medium mb-6 text-sm transition-colors"
+          className="inline-flex items-center gap-2 text-slate-600 hover:text-emerald-700 font-medium mb-6 text-sm transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Voltar para Detalhes da Campanha</span>
         </Link>
+
         <h1 className="text-2xl font-bold text-slate-800 mb-6">
           Editar Campanha
         </h1>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -121,8 +164,7 @@ font-medium mb-6 text-sm transition-colors"
                 name="id_tipo_campanha"
                 value={formCampanha.id_tipo_campanha}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs
-text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               >
                 <option value={1}>Arrecadação (Doações / Itens)</option>
                 <option value={2}>Voluntariado (Engajamento de Pessoas)</option>
@@ -136,8 +178,7 @@ text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                 name="status"
                 value={formCampanha.status}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs
-text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               >
                 <option value="ativa">Ativa</option>
                 <option value="concluida">Concluída</option>
@@ -145,6 +186,7 @@ text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               </select>
             </div>
           </div>
+
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Título da Campanha <span className="text-red-500">*</span>
@@ -155,10 +197,10 @@ text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               value={formCampanha.titulo}
               onChange={handleChange}
               required
-              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs
-text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
             />
           </div>
+
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Descrição <span className="text-red-500">*</span>
@@ -169,10 +211,11 @@ text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               value={formCampanha.descricao}
               onChange={handleChange}
               required
-              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs
-text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
             />
           </div>
+
+          {/* DATAS COM VALIDAÇÃO */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -184,8 +227,7 @@ text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                 value={formCampanha.data_inicio}
                 onChange={handleChange}
                 required
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs
-text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               />
             </div>
             <div>
@@ -197,11 +239,21 @@ text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                 name="data_fim"
                 value={formCampanha.data_fim}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs
-text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                min={formCampanha.data_inicio || undefined}
+                className={`w-full px-3.5 py-2 rounded-xl border text-xs text-slate-800 focus:outline-none focus:ring-2 ${
+                  !periodoStatus.valid
+                    ? "border-red-400 focus:ring-red-500/30 bg-red-50"
+                    : "border-slate-300 focus:ring-emerald-500/30"
+                }`}
               />
+              {!periodoStatus.valid && (
+                <p className="text-[11px] text-red-600 mt-1 font-medium">
+                  {periodoStatus.error}
+                </p>
+              )}
             </div>
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -215,8 +267,7 @@ text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                 value={formCampanha.meta_arrecadacao}
                 onChange={handleChange}
                 step="any"
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs
-text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               />
             </div>
             {Number(formCampanha.id_tipo_campanha) === 1 && (
@@ -230,23 +281,23 @@ text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                   value={formCampanha.valor_arrecadado}
                   onChange={handleChange}
                   step="any"
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs
-text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                 />
               </div>
             )}
           </div>
+
           <div className="pt-4 border-t border-slate-100 flex gap-3">
             <Link
               to={`/campanhas/${id_campanha}`}
-              className="w-1/2 py-2.5 text-center text-xs font-semibold text-slate-700 bgslate-100 hover:bg-slate-200 rounded-xl transition-all"
+              className="w-1/2 py-2.5 text-center text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all"
             >
               Cancelar
             </Link>
             <button
               type="submit"
-              className="w-1/2 py-2.5 text-xs font-semibold text-white bg-emerald-600
-hover:bg-emerald-700 rounded-xl shadow-xs transition-all cursor-pointer"
+              disabled={!periodoStatus.valid}
+              className="w-1/2 py-2.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Salvar Alterações
             </button>
@@ -256,4 +307,5 @@ hover:bg-emerald-700 rounded-xl shadow-xs transition-all cursor-pointer"
     </div>
   );
 }
+
 export default EditarCampanha;

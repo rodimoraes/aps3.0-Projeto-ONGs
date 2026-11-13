@@ -2,7 +2,7 @@ import os
 from datetime import date
 from typing import Optional
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 import mysql.connector
 from dotenv import load_dotenv
 
@@ -20,10 +20,10 @@ def get_db_connection():
     )
 
 
-# Schema Pydantic atualizado com id_tipo_campanha
+# Schema Pydantic atualizado com id_tipo_campanha + validação de datas
 class CampanhaSchema(BaseModel):
     id_ong: int
-    id_tipo_campanha: int  # 1: Arrecadação, 2: Voluntariado
+    id_tipo_campanha: int
     titulo: str
     descricao: str
     data_inicio: date
@@ -31,6 +31,14 @@ class CampanhaSchema(BaseModel):
     meta_arrecadacao: Optional[float] = 0.0
     valor_arrecadado: Optional[float] = 0.0
     status: Optional[str] = "ativa"
+
+    @model_validator(mode="after")
+    def _validar_datas(self):
+        if self.data_fim is not None and self.data_fim < self.data_inicio:
+            raise ValueError(
+                "A data de fim não pode ser anterior à data de início."
+            )
+        return self
 
 
 class InscricaoVoluntarioSchema(BaseModel):
@@ -75,7 +83,6 @@ def cadastrar_campanha(campanha: CampanhaSchema):
 
 
 # 2. READ - Listar todas as campanhas de UMA ONG ESPECÍFICA
-# (Deve ser declarada ANTES da rota GET /{id_campanha})
 @router.get("/ong/{id_ong}")
 def listar_campanhas_por_ong(id_ong: int):
     try:
@@ -96,6 +103,7 @@ def listar_campanhas_por_ong(id_ong: int):
         return campanhas
     except mysql.connector.Error as err:
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
+
 
 # 3. READ - Buscar detalhes de UMA campanha específica
 @router.get("/{id_campanha}")
@@ -205,7 +213,7 @@ def inscrever_voluntario(id_campanha: int, dados: InscricaoVoluntarioSchema):
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
 
 
-# 7. VERIFICAR INSCRIÇÃO - Checa se o usuário já se inscreveu
+# 7. VERIFICAR INSCRIÇÃO
 @router.get("/{id_campanha}/inscricao/{id_usuario}")
 def verificar_inscricao(id_campanha: int, id_usuario: int):
     try:
@@ -219,9 +227,9 @@ def verificar_inscricao(id_campanha: int, id_usuario: int):
         return {"inscrito": bool(inscricao), "dados": inscricao}
     except mysql.connector.Error as err:
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
-    
-# 8. LISTAR VOLUNTÁRIOS DA CAMPANHA - Busca os dados de contato dos inscritos
-# Rota para listar os voluntários de uma campanha específica
+
+
+# 8. LISTAR VOLUNTÁRIOS DA CAMPANHA
 @router.get("/{id_campanha}/voluntarios")
 def listar_voluntarios_campanha(id_campanha: int):
     try:
@@ -248,15 +256,15 @@ def listar_voluntarios_campanha(id_campanha: int):
         return voluntarios
     except mysql.connector.Error as err:
         raise HTTPException(status_code=500, detail=f"Erro no banco de dados: {err}")
-    
-# 9. DASHBOARD DA ONG - Métricas consolidadas por tipo e status
+
+
+# 9. DASHBOARD DA ONG
 @router.get("/ong/{id_ong}/dashboard")
 def buscar_dashboard_ong(id_ong: int):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor(dictionary=True)
 
-        # Busca todas as campanhas da ONG com o nome do tipo
         sql = """
         SELECT
             c.id_campanha,
@@ -279,12 +287,10 @@ def buscar_dashboard_ong(id_ong: int):
         cursor.close()
         conexao.close()
 
-        # Consolidação dos Indicadores (KPIs)
         total_campanhas = len(campanhas)
         ativas = sum(1 for c in campanhas if c["status"] == "ativa")
         encerradas = sum(1 for c in campanhas if c["status"] in ["concluida", "cancelada"])
 
-        # Campanhas por Tipo
         arrecadacao = [c for c in campanhas if c["id_tipo_campanha"] == 1]
         voluntariado = [c for c in campanhas if c["id_tipo_campanha"] == 2]
 

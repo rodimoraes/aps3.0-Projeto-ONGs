@@ -1,8 +1,5 @@
 // frontend/js/validador.js
 
-// Google libphonenumber-js — metadata completa (precisão máxima)
-// Bundle: ~140 kB. Se quiser economizar, troque "/max" por "/mobile"
-// (~105 kB) — como só validamos celular no Brasil, funciona igual.
 import { parsePhoneNumber, AsYouType } from "libphonenumber-js/max";
 
 // =============================================================
@@ -24,11 +21,6 @@ export const maskCEP = (value) =>
     .replace(/^(\d{5})(\d)/, "$1-$2")
     .slice(0, 9);
 
-/**
- * Máscara de celular via AsYouType do libphonenumber.
- * Formata dinamicamente enquanto o usuário digita.
- * Aceita colar com +55 (remove o DDI automaticamente).
- */
 export const maskCelular = (value) => {
   let digits = apenasDigitos(value);
   if (digits.length > 11 && digits.startsWith("55")) {
@@ -40,7 +32,7 @@ export const maskCelular = (value) => {
 };
 
 // =============================================================
-// VALIDAÇÃO DE CPF — Algoritmo oficial (módulo 11), 100% local
+// VALIDAÇÃO DE CPF
 // =============================================================
 const validarCPFLocal = (cpfLimpo) => {
   if (!cpfLimpo || cpfLimpo.length !== 11) return false;
@@ -59,10 +51,6 @@ const validarCPFLocal = (cpfLimpo) => {
   return resto === parseInt(cpfLimpo[10], 10);
 };
 
-/**
- * Valida CPF localmente (sem rede, sem token).
- * @returns {{ valid: boolean, formatted: string, error?: string }}
- */
 export const validarCPF = (cpf) => {
   const cpfLimpo = apenasDigitos(cpf);
 
@@ -93,13 +81,8 @@ export const validarCPF = (cpf) => {
 };
 
 // =============================================================
-// VALIDAÇÃO DE CELULAR — Google libphonenumber
+// VALIDAÇÃO DE CELULAR
 // =============================================================
-/**
- * Valida celular brasileiro usando os metadados oficiais do Google.
- * Verifica: formato, DDD, comprimento e se o tipo é MOBILE.
- * @returns {{ valid: boolean, formatted: string, e164?: string, error?: string }}
- */
 export const validarCelular = (valor) => {
   let digits = apenasDigitos(valor);
   if (digits.length > 11 && digits.startsWith("55")) {
@@ -140,8 +123,8 @@ export const validarCelular = (valor) => {
 
     return {
       valid: true,
-      formatted: phone.formatNational(), // (11) 98765-4321
-      e164: phone.number, // +5511987654321
+      formatted: phone.formatNational(),
+      e164: phone.number,
     };
   } catch (err) {
     return {
@@ -200,7 +183,7 @@ export const verificarForcaSenha = (senha = "") => {
 };
 
 // =============================================================
-// MONTAR ENDEREÇO ÚNICO (compatível com backend VARCHAR(100))
+// MONTAR ENDEREÇO ÚNICO
 // =============================================================
 export const montarEndereco = (e = {}) => {
   const partes = [];
@@ -220,7 +203,6 @@ export const montarEndereco = (e = {}) => {
 
 // =============================================================
 // PARSE REVERSO — desmonta a string de endereço em campos
-// Compatível com o formato gerado por montarEndereco()
 // =============================================================
 export const parseEndereco = (endereco = "") => {
   const vazio = {
@@ -234,18 +216,15 @@ export const parseEndereco = (endereco = "") => {
   };
   if (!endereco || typeof endereco !== "string") return vazio;
 
-  // 1) Extrai o CEP no final: "CEP 00000-000"
   let resto = endereco.trim();
   let cep = "";
   const cepMatch = resto.match(/-\s*CEP\s*([\d-]{8,9})\s*$/i);
   if (cepMatch) {
     cep = cepMatch[1];
     resto = resto.slice(0, cepMatch.index).trim();
-    // remove o " - " que sobrou antes do CEP
     resto = resto.replace(/\s*-\s*$/, "").trim();
   }
 
-  // 2) Extrai "Cidade/UF" no final
   let cidade = "";
   let estado = "";
   const cidadeUfMatch = resto.match(/([A-Za-zÀ-ú\s.]+)\/([A-Z]{2})\s*$/);
@@ -256,8 +235,6 @@ export const parseEndereco = (endereco = "") => {
     resto = resto.replace(/\s*-\s*$/, "").trim();
   }
 
-  // 3) O que sobrou: "Logradouro, N - Complemento - Bairro"
-  // O bairro é o último segmento após " - "
   let bairro = "";
   let logradouroNumCompl = resto;
   const partes = resto.split(" - ");
@@ -266,11 +243,9 @@ export const parseEndereco = (endereco = "") => {
     logradouroNumCompl = partes.slice(0, -1).join(" - ").trim();
   }
 
-  // 4) Separa "Logradouro, N - Complemento"
   let logradouro = "";
   let numero = "";
   let complemento = "";
-  // formato: "Rua X, 100" ou "Rua X, 100 - Apto 2"
   const compMatch = logradouroNumCompl.match(
     /^(.+?),\s*([^-]+?)\s*(?:-\s*(.+))?$/,
   );
@@ -279,9 +254,97 @@ export const parseEndereco = (endereco = "") => {
     numero = compMatch[2].trim();
     complemento = (compMatch[3] || "").trim();
   } else {
-    // fallback: só logradouro
     logradouro = logradouroNumCompl;
   }
 
   return { cep, logradouro, numero, complemento, bairro, cidade, estado };
+};
+
+// =============================================================
+// 🆕 VALIDAÇÃO DE MAIORIDADE (18+)
+// =============================================================
+export const calcularIdade = (dataNascimento) => {
+  if (!dataNascimento) return null;
+  const nasc = new Date(dataNascimento + "T00:00:00");
+  if (isNaN(nasc.getTime())) return null;
+  const hoje = new Date();
+  let idade = hoje.getFullYear() - nasc.getFullYear();
+  const m = hoje.getMonth() - nasc.getMonth();
+  if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+  return idade;
+};
+
+/**
+ * Valida se o usuário tem a idade mínima (padrão: 18 anos).
+ * @returns {{ valid: boolean, idade?: number, error?: string }}
+ */
+export const validarMaioridade = (dataNascimento, idadeMinima = 18) => {
+  if (!dataNascimento) {
+    return { valid: false, error: "Data de nascimento é obrigatória." };
+  }
+  const nasc = new Date(dataNascimento + "T00:00:00");
+  if (isNaN(nasc.getTime())) {
+    return { valid: false, error: "Data de nascimento inválida." };
+  }
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  if (nasc > hoje) {
+    return {
+      valid: false,
+      error: "Data de nascimento não pode ser no futuro.",
+    };
+  }
+  const idade = calcularIdade(dataNascimento);
+  if (idade < idadeMinima) {
+    return {
+      valid: false,
+      idade,
+      error: `É necessário ter ${idadeMinima} anos ou mais. Idade informada: ${idade} anos.`,
+    };
+  }
+  if (idade > 120) {
+    return { valid: false, error: "Data de nascimento inválida." };
+  }
+  return { valid: true, idade };
+};
+
+/**
+ * Retorna a data máxima (YYYY-MM-DD) que um usuário
+ * pode informar para ter N anos.
+ */
+export const dataMaximaNascimento = (idadeMinima = 18) => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - idadeMinima);
+  const ano = d.getFullYear();
+  const mes = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+};
+
+// =============================================================
+// 🆕 VALIDAÇÃO DE PERÍODO DE CAMPANHA
+// =============================================================
+/**
+ * Valida se data_fim >= data_inicio.
+ * @returns {{ valid: boolean, error?: string }}
+ */
+export const validarPeriodoCampanha = (dataInicio, dataFim) => {
+  if (!dataInicio) {
+    return { valid: false, error: "A data de início é obrigatória." };
+  }
+  if (!dataFim) {
+    return { valid: true };
+  }
+  const ini = new Date(dataInicio + "T00:00:00");
+  const fim = new Date(dataFim + "T00:00:00");
+  if (isNaN(ini.getTime()) || isNaN(fim.getTime())) {
+    return { valid: false, error: "Datas inválidas." };
+  }
+  if (fim < ini) {
+    return {
+      valid: false,
+      error: "A data de fim não pode ser anterior à data de início.",
+    };
+  }
+  return { valid: true };
 };

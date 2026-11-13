@@ -8,7 +8,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   maskCPF,
   maskCelular,
@@ -18,6 +18,8 @@ import {
   buscarCEP,
   verificarForcaSenha,
   montarEndereco,
+  validarMaioridade,
+  dataMaximaNascimento,
 } from "../../../js/validador";
 import Header from "../../components/header.jsx";
 
@@ -199,6 +201,16 @@ function CadastrarUsuario() {
   const [enviando, setEnviando] = useState(false);
 
   const forca = verificarForcaSenha(form.senha);
+  const dataMaxima = dataMaximaNascimento(18);
+
+  // Validação da data de nascimento — SÓ mostra mensagem se estiver ERRADA
+  const dataNascStatus = useMemo(() => {
+    if (!form.data_nascimento) return { status: "idle", msg: "" };
+    const r = validarMaioridade(form.data_nascimento);
+    return r.valid
+      ? { status: "valid", msg: "" } // ✅ válido: nenhuma mensagem
+      : { status: "invalid", msg: r.error }; // ❌ inválido: mostra erro
+  }, [form.data_nascimento]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -222,7 +234,6 @@ function CadastrarUsuario() {
   const validarCpf = () => {
     const d = form.cpf.replace(/\D/g, "");
     if (!d) return;
-
     const r = validarCPF(form.cpf);
     setCpf(
       r.valid
@@ -234,7 +245,6 @@ function CadastrarUsuario() {
   const validarCelularField = () => {
     const d = form.celular.replace(/\D/g, "");
     if (!d) return;
-
     const r = validarCelular(form.celular);
     setCelular(
       r.valid
@@ -266,6 +276,14 @@ function CadastrarUsuario() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 🆕 VALIDAÇÃO DE MAIORIDADE
+    const valIdade = validarMaioridade(form.data_nascimento);
+    if (!valIdade.valid) {
+      alert(valIdade.error);
+      return;
+    }
+
     if (cpf.status !== "valid") return alert("Valide o CPF antes de enviar.");
     if (celular.status !== "valid")
       return alert("Valide o celular antes de enviar.");
@@ -295,8 +313,21 @@ function CadastrarUsuario() {
         alert("Usuário cadastrado com sucesso! Faça seu login.");
         navigate("/login");
       } else {
-        const err = await res.json();
-        alert(`Erro: ${err.detail || "Verifique os dados."}`);
+        const err = await res.json().catch(() => ({}));
+        let msg = "Verifique os dados.";
+        if (typeof err.detail === "string") {
+          msg = err.detail;
+        } else if (Array.isArray(err.detail)) {
+          msg = err.detail
+            .map((x) => {
+              let m = x.msg || "";
+              if (m.startsWith("Value error, "))
+                m = m.replace("Value error, ", "");
+              return m;
+            })
+            .join("\n");
+        }
+        alert(`Erro: ${msg}`);
       }
     } catch {
       alert("Não foi possível conectar ao servidor backend.");
@@ -369,13 +400,33 @@ function CadastrarUsuario() {
                 onChange={handleChange}
                 placeholder="exemplo@email.com"
               />
-              <CampoTexto
-                label="Data de Nascimento"
-                name="data_nascimento"
-                type="date"
-                value={form.data_nascimento}
-                onChange={handleChange}
-              />
+
+              {/* DATA DE NASCIMENTO COM VALIDAÇÃO 18+ */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Data de Nascimento <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="date"
+                    name="data_nascimento"
+                    value={form.data_nascimento}
+                    onChange={handleChange}
+                    required
+                    max={dataMaxima}
+                    className={`${inputCls} ${
+                      corBorda[dataNascStatus.status] || corBorda.idle
+                    }`}
+                  />
+                  <Icone status={dataNascStatus.status} />
+                </div>
+                {/* Só exibe mensagem se houver erro */}
+                {dataNascStatus.msg && (
+                  <p className="text-xs mt-1 text-red-600">
+                    {dataNascStatus.msg}
+                  </p>
+                )}
+              </div>
             </div>
 
             <CampoTexto
@@ -514,7 +565,8 @@ function CadastrarUsuario() {
                   cpf.status === "loading" ||
                   celular.status === "loading" ||
                   cep.status === "loading" ||
-                  !forca.valida
+                  !forca.valida ||
+                  dataNascStatus.status !== "valid"
                 }
                 className="px-6 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >

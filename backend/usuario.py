@@ -1,7 +1,8 @@
 # backend/usuario.py
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
+from datetime import datetime, date
 import mysql.connector
 from dotenv import load_dotenv
 import os
@@ -28,6 +29,33 @@ def get_db_connection():
 
 
 # ============================================================
+# Helper: valida maioridade (18+)
+# ============================================================
+def _validar_maioridade(valor: str) -> str:
+    if not valor:
+        raise ValueError("Data de nascimento é obrigatória.")
+    try:
+        data_nasc = datetime.strptime(str(valor), "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        raise ValueError(
+            "Data de nascimento inválida. Use o formato YYYY-MM-DD."
+        )
+    hoje = date.today()
+    if data_nasc > hoje:
+        raise ValueError("Data de nascimento não pode ser no futuro.")
+    idade = hoje.year - data_nasc.year - (
+        (hoje.month, hoje.day) < (data_nasc.month, data_nasc.day)
+    )
+    if idade < 18:
+        raise ValueError(
+            f"É necessário ter 18 anos ou mais para se cadastrar."
+        )
+    if idade > 120:
+        raise ValueError("Data de nascimento inválida.")
+    return str(valor)
+
+
+# ============================================================
 # Schemas
 # ============================================================
 class UsuarioSchema(BaseModel):
@@ -41,6 +69,11 @@ class UsuarioSchema(BaseModel):
     celular: str
     voluntario: bool = False
 
+    @field_validator("data_nascimento")
+    @classmethod
+    def _check_idade(cls, v: str) -> str:
+        return _validar_maioridade(v)
+
 
 class UsuarioUpdateSchema(BaseModel):
     nome: str
@@ -51,6 +84,11 @@ class UsuarioUpdateSchema(BaseModel):
     data_nascimento: str
     celular: str
     voluntario: bool = False
+
+    @field_validator("data_nascimento")
+    @classmethod
+    def _check_idade(cls, v: str) -> str:
+        return _validar_maioridade(v)
 
 
 class LoginSchema(BaseModel):
@@ -65,7 +103,6 @@ class SenhaUpdateSchema(BaseModel):
 
 # ============================================================
 # Helper: valida a força da senha no backend
-# (mesmos critérios usados no frontend: 8+, maiúsc, minúsc, número, especial)
 # ============================================================
 CARACTERES_ESPECIAIS = set("!@#$%^&*(),.?\":{}|<>_-+=;'/\\[]~`")
 
@@ -236,7 +273,7 @@ def buscar_usuario(id_usuario: int):
 
 
 # ============================================================
-# UPDATE — dados cadastrais (representante_ong NÃO é alterável)
+# UPDATE — valida idade via UsuarioUpdateSchema
 # ============================================================
 @router.put("/{id_usuario}")
 def atualizar_usuario(id_usuario: int, usuario: UsuarioUpdateSchema):
@@ -244,7 +281,6 @@ def atualizar_usuario(id_usuario: int, usuario: UsuarioUpdateSchema):
         conexao = get_db_connection()
         cursor = conexao.cursor(dictionary=True)
 
-        # 1) Verifica se o usuário existe PRIMEIRO
         cursor.execute(
             "SELECT id_usuario FROM usuario WHERE id_usuario = %s",
             (id_usuario,),
@@ -256,7 +292,6 @@ def atualizar_usuario(id_usuario: int, usuario: UsuarioUpdateSchema):
 
         cursor.close()
 
-        # 2) Executa o UPDATE
         cursor = conexao.cursor()
         sql = """
             UPDATE usuario SET
@@ -288,7 +323,7 @@ def atualizar_usuario(id_usuario: int, usuario: UsuarioUpdateSchema):
 
 
 # ============================================================
-# ALTERAR SENHA — exige login do próprio usuário e senha atual
+# ALTERAR SENHA
 # ============================================================
 @router.put("/{id_usuario}/senha")
 def alterar_senha(
@@ -296,14 +331,12 @@ def alterar_senha(
     dados: SenhaUpdateSchema,
     usuario_atual: dict = Depends(obter_usuario_atual),
 ):
-    # 1) Só pode trocar a própria senha
     if usuario_atual["id_usuario"] != id_usuario:
         raise HTTPException(
             status_code=403,
             detail="Você só pode alterar a sua própria senha.",
         )
 
-    # 2) Valida força da senha nova
     if not senha_forte(dados.senha_nova):
         raise HTTPException(
             status_code=400,
@@ -329,13 +362,11 @@ def alterar_senha(
             conexao.close()
             raise HTTPException(status_code=404, detail="Usuário não encontrado.")
 
-        # 3) Verifica a senha atual
         if not verificar_senha(dados.senha_atual, registro["senha"]):
             cursor.close()
             conexao.close()
             raise HTTPException(status_code=400, detail="Senha atual incorreta.")
 
-        # 4) Gera o novo hash e salva
         novo_hash = gerar_hash_senha(dados.senha_nova)
 
         cursor.close()

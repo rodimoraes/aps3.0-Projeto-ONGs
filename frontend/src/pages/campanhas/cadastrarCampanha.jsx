@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import Header from "../../components/header.jsx"
+import Header from "../../components/header.jsx";
+import { validarPeriodoCampanha } from "../../../js/validador";
+
 function CadastrarCampanha() {
   const { id_ong, id_campanha } = useParams();
   const navigate = useNavigate();
   const isEdicao = Boolean(id_campanha);
+
   const [formCampanha, setFormCampanha] = useState({
     id_ong: id_ong || "",
-    id_tipo_campanha: 1, // 1 = Arrecadação (Padrão), 2 = Voluntariado
+    id_tipo_campanha: 1,
     titulo: "",
     descricao: "",
     data_inicio: "",
@@ -18,7 +21,16 @@ function CadastrarCampanha() {
     status: "ativa",
   });
   const [loading, setLoading] = useState(isEdicao);
-  // Se for edição, carrega os dados atuais da campanha
+
+  // Validação ao vivo das datas
+  const periodoStatus = useMemo(() => {
+    if (!formCampanha.data_inicio) return { valid: true };
+    return validarPeriodoCampanha(
+      formCampanha.data_inicio,
+      formCampanha.data_fim,
+    );
+  }, [formCampanha.data_inicio, formCampanha.data_fim]);
+
   useEffect(() => {
     if (isEdicao) {
       const carregarCampanha = async () => {
@@ -30,6 +42,7 @@ function CadastrarCampanha() {
             const data = await res.json();
             setFormCampanha({
               id_ong: data.id_ong,
+              id_tipo_campanha: data.id_tipo_campanha || 1,
               titulo: data.titulo || "",
               descricao: data.descricao || "",
               data_inicio: data.data_inicio || "",
@@ -52,15 +65,29 @@ function CadastrarCampanha() {
       carregarCampanha();
     }
   }, [id_campanha, isEdicao, navigate]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormCampanha((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 🆕 VALIDAÇÃO DE DATAS
+    const periodo = validarPeriodoCampanha(
+      formCampanha.data_inicio,
+      formCampanha.data_fim,
+    );
+    if (!periodo.valid) {
+      alert(periodo.error);
+      return;
+    }
+
     const dadosFormatados = {
       ...formCampanha,
       id_ong: Number(formCampanha.id_ong),
+      id_tipo_campanha: Number(formCampanha.id_tipo_campanha),
       meta_arrecadacao: formCampanha.meta_arrecadacao
         ? Number(formCampanha.meta_arrecadacao)
         : 0,
@@ -69,10 +96,12 @@ function CadastrarCampanha() {
         : 0,
       data_fim: formCampanha.data_fim ? formCampanha.data_fim : null,
     };
+
     const url = isEdicao
       ? `http://127.0.0.1:8000/campanhas/${id_campanha}`
       : "http://127.0.0.1:8000/campanhas";
     const method = isEdicao ? "PUT" : "POST";
+
     try {
       const res = await fetch(url, {
         method,
@@ -83,14 +112,28 @@ function CadastrarCampanha() {
         alert(isEdicao ? "Campanha atualizada!" : "Campanha cadastrada!");
         navigate(`/ongs/${dadosFormatados.id_ong}/campanhas`);
       } else {
-        const errorData = await res.json();
-        alert(`Erro: ${JSON.stringify(errorData.detail)}`);
+        const err = await res.json().catch(() => ({}));
+        let msg = "Erro desconhecido.";
+        if (typeof err.detail === "string") {
+          msg = err.detail;
+        } else if (Array.isArray(err.detail)) {
+          msg = err.detail
+            .map((x) => {
+              let m = x.msg || "";
+              if (m.startsWith("Value error, "))
+                m = m.replace("Value error, ", "");
+              return m;
+            })
+            .join("\n");
+        }
+        alert(`Erro: ${msg}`);
       }
     } catch (error) {
       console.error("Erro ao salvar:", error);
       alert("Não foi possível conectar ao servidor.");
     }
   };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -98,18 +141,19 @@ function CadastrarCampanha() {
       </div>
     );
   }
+
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-0">
-      <Header/>
+      <Header />
       <div className="max-w-xl mx-auto bg-white rounded-2xl shadow-xs border border-slate-200 sm:p-8">
         <Link
           to={`/ongs/${formCampanha.id_ong}/campanhas`}
-          className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-700
-font-medium mb-6 text-sm transition-colors"
+          className="inline-flex items-center gap-2 text-slate-600 hover:text-blue-700 font-medium mb-6 text-sm transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Voltar para as Campanhas</span>
         </Link>
+
         <h1 className="text-2xl font-bold text-slate-800 mb-6">
           {isEdicao ? "Editar Campanha" : "Nova Campanha"}
         </h1>
@@ -125,9 +169,10 @@ font-medium mb-6 text-sm transition-colors"
               value={formCampanha.titulo}
               onChange={handleChange}
               required
-              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-slate800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald500"
+              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
             />
           </div>
+
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Descrição <span className="text-red-500">*</span>
@@ -138,9 +183,11 @@ font-medium mb-6 text-sm transition-colors"
               value={formCampanha.descricao}
               onChange={handleChange}
               required
-              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-slate800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald500"
+              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
             />
           </div>
+
+          {/* DATAS COM VALIDAÇÃO */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -152,7 +199,7 @@ font-medium mb-6 text-sm transition-colors"
                 value={formCampanha.data_inicio}
                 onChange={handleChange}
                 required
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 textslate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               />
             </div>
             <div>
@@ -164,10 +211,21 @@ font-medium mb-6 text-sm transition-colors"
                 name="data_fim"
                 value={formCampanha.data_fim}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 textslate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                min={formCampanha.data_inicio || undefined}
+                className={`w-full px-3.5 py-2 rounded-xl border text-slate-800 text-sm focus:outline-none focus:ring-2 ${
+                  !periodoStatus.valid
+                    ? "border-red-400 focus:ring-red-500/30 bg-red-50"
+                    : "border-slate-300 focus:ring-emerald-500/30"
+                }`}
               />
+              {!periodoStatus.valid && (
+                <p className="text-[11px] text-red-600 mt-1 font-medium">
+                  {periodoStatus.error}
+                </p>
+              )}
             </div>
           </div>
+
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Tipo de Campanha <span className="text-red-500">*</span>
@@ -181,17 +239,17 @@ font-medium mb-6 text-sm transition-colors"
                   id_tipo_campanha: Number(e.target.value),
                 })
               }
-              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800
-focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
             >
               <option value={1}>Arrecadação (Doações / Itens)</option>
               <option value={2}>Voluntariado (Engajamento de Pessoas)</option>
             </select>
           </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Meta de Arrecadação (R\$)
+                Meta de Arrecadação (R$)
               </label>
               <input
                 type="number"
@@ -199,12 +257,12 @@ focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                 name="meta_arrecadacao"
                 value={formCampanha.meta_arrecadacao}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 textslate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Valor Arrecadado (R\$)
+                Valor Arrecadado (R$)
               </label>
               <input
                 type="number"
@@ -212,36 +270,38 @@ focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                 name="valor_arrecadado"
                 value={formCampanha.valor_arrecadado}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 textslate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
               />
             </div>
           </div>
+
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
               Status
             </label>
             <select
               name="status"
               value={formCampanha.status}
               onChange={handleChange}
-              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-slate800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+              className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
             >
               <option value="ativa">Ativa</option>
               <option value="encerrada">Encerrada</option>
               <option value="pausada">Pausada</option>
             </select>
           </div>
+
           <div className="pt-4 border-t border-slate-100 flex gap-3">
             <Link
               to={`/ongs/${formCampanha.id_ong}/campanhas`}
-              className="w-1/2 py-2.5 text-center text-sm font-medium text-slate-700 bgslate-100 hover:bg-slate-200 rounded-xl transition-all"
+              className="w-1/2 py-2.5 text-center text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all"
             >
               Cancelar
             </Link>
             <button
               type="submit"
-              className="w-1/2 py-2.5 text-sm font-medium text-white bg-emerald-600
-hover:bg-emerald-700 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
+              disabled={!periodoStatus.valid}
+              className="w-1/2 py-2.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isEdicao ? "Salvar Alterações" : "Cadastrar Campanha"}
             </button>
@@ -251,4 +311,5 @@ hover:bg-emerald-700 rounded-xl shadow-xs transition-all active:scale-95 cursor-
     </div>
   );
 }
+
 export default CadastrarCampanha;

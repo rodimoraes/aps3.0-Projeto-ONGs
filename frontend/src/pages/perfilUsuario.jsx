@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -13,7 +13,13 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import Header from "../components/header.jsx";
-import { maskCPF, maskCelular, verificarForcaSenha } from "../../js/validador";
+import {
+  maskCPF,
+  maskCelular,
+  verificarForcaSenha,
+  validarMaioridade,
+  dataMaximaNascimento,
+} from "../../js/validador";
 
 const API = "http://127.0.0.1:8000";
 const ESTADOS_CIVIS = ["solteiro", "casado", "divorciado", "viuvo"];
@@ -91,6 +97,16 @@ function PerfilUsuario() {
   });
 
   const forca = verificarForcaSenha(form.novaSenha);
+  const dataMaxima = dataMaximaNascimento(18);
+
+  // Validação da data de nascimento — SÓ mostra mensagem se estiver ERRADA
+  const dataNascStatus = useMemo(() => {
+    if (!form.data_nascimento) return { status: "idle", msg: "" };
+    const r = validarMaioridade(form.data_nascimento);
+    return r.valid
+      ? { status: "valid", msg: "" } // ✅ válido: nenhuma mensagem
+      : { status: "invalid", msg: r.error }; // ❌ inválido: mostra erro
+  }, [form.data_nascimento]);
 
   useEffect(() => {
     if (!usuarioLogado) {
@@ -141,7 +157,6 @@ function PerfilUsuario() {
     if (name === "cpf") v = maskCPF(value);
     if (name === "celular") v = maskCelular(value);
     setForm((prev) => ({ ...prev, [name]: v }));
-    // limpa mensagens ao editar
     if (erro) setErro("");
     if (sucesso) setSucesso("");
   };
@@ -151,7 +166,13 @@ function PerfilUsuario() {
     setErro("");
     setSucesso("");
 
-    // ---------- Validações locais da senha ----------
+    // 🆕 VALIDAÇÃO DE MAIORIDADE
+    const valIdade = validarMaioridade(form.data_nascimento);
+    if (!valIdade.valid) {
+      setErro(valIdade.error);
+      return;
+    }
+
     if (alterarSenha) {
       if (!form.senha_atual) {
         setErro("Informe a sua senha atual para alterá-la.");
@@ -170,9 +191,6 @@ function PerfilUsuario() {
     setSalvando(true);
 
     try {
-      // ============================================================
-      // 1) Atualiza os dados cadastrais
-      // ============================================================
       const payload = {
         nome: form.nome,
         cpf: form.cpf,
@@ -195,17 +213,24 @@ function PerfilUsuario() {
 
       if (!resDados.ok) {
         const err = await resDados.json().catch(() => ({}));
-        const msg = Array.isArray(err.detail)
-          ? err.detail
-              .map((x) => `${x.loc?.join(".") || "campo"}: ${x.msg}`)
-              .join(", ")
-          : err.detail || "Erro ao salvar os dados cadastrais.";
+        let msg = "Erro ao salvar os dados cadastrais.";
+        if (typeof err.detail === "string") {
+          msg = err.detail;
+        } else if (Array.isArray(err.detail)) {
+          msg = err.detail
+            .map((x) => {
+              let m = x.msg || "";
+              if (m.startsWith("Value error, "))
+                m = m.replace("Value error, ", "");
+              return m;
+            })
+            .join("\n");
+        }
         setErro(msg);
         setSalvando(false);
         return;
       }
 
-      // Atualiza o localStorage (nome e email no header)
       const usuarioAtualizado = {
         ...usuarioLogado,
         nome: form.nome,
@@ -214,9 +239,6 @@ function PerfilUsuario() {
       localStorage.setItem("usuario", JSON.stringify(usuarioAtualizado));
       window.dispatchEvent(new Event("usuarioAtualizado"));
 
-      // ============================================================
-      // 2) Atualiza a senha (se marcado)
-      // ============================================================
       if (alterarSenha) {
         const token = localStorage.getItem("token");
         if (!token) {
@@ -248,7 +270,6 @@ function PerfilUsuario() {
             typeof err.detail === "string"
               ? err.detail
               : "Falha ao alterar a senha.";
-          // ⚠️ dados cadastrais já foram salvos → avisa o usuário
           setErro(
             `Dados cadastrais atualizados, mas a senha NÃO foi alterada: ${msg}`,
           );
@@ -256,7 +277,6 @@ function PerfilUsuario() {
           return;
         }
 
-        // Limpa os campos de senha após sucesso
         setForm((prev) => ({
           ...prev,
           senha_atual: "",
@@ -272,7 +292,6 @@ function PerfilUsuario() {
           : "Perfil atualizado com sucesso!",
       );
 
-      // Redireciona após 1.2s pra dar tempo do usuário ler
       setTimeout(() => navigate("/"), 1200);
     } catch (err) {
       console.error(err);
@@ -318,7 +337,7 @@ function PerfilUsuario() {
           {erro && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span className="break-words">{erro}</span>
+              <span className="break-words whitespace-pre-line">{erro}</span>
             </div>
           )}
 
@@ -421,6 +440,8 @@ function PerfilUsuario() {
                   ))}
                 </select>
               </div>
+
+              {/* DATA DE NASCIMENTO COM VALIDAÇÃO 18+ */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Data de Nascimento
@@ -431,12 +452,24 @@ function PerfilUsuario() {
                   value={form.data_nascimento}
                   onChange={handleChange}
                   required
-                  className={inputCls}
+                  max={dataMaxima}
+                  className={`${inputCls} ${
+                    dataNascStatus.status === "valid"
+                      ? "border-green-500"
+                      : dataNascStatus.status === "invalid"
+                        ? "border-red-400"
+                        : ""
+                  }`}
                 />
+                {/* Só exibe mensagem se houver erro */}
+                {dataNascStatus.msg && (
+                  <p className="text-[11px] mt-1 text-red-600">
+                    {dataNascStatus.msg}
+                  </p>
+                )}
               </div>
             </div>
 
-            {/* ALTERAR SENHA */}
             <div className="pt-4 border-t border-slate-100">
               <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-slate-700 mb-3">
                 <input
@@ -552,7 +585,7 @@ function PerfilUsuario() {
               </Link>
               <button
                 type="submit"
-                disabled={salvando}
+                disabled={salvando || dataNascStatus.status === "invalid"}
                 className="w-1/2 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5"
               >
                 {salvando && <Loader2 className="w-4 h-4 animate-spin" />}
